@@ -11,7 +11,7 @@
   *{box-sizing:border-box}
   body{
     margin:0; font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans";
-    background:radial-gradient(900px 600px at 10% -10%, #2a3377 0%, transparent 60%) , var(--bg);
+    background:radial-gradient(900px 600px at 10% -10%, #2a3377 0%, transparent 60%), var(--bg);
     color:var(--ink); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:16px;
   }
   .app{max-width:900px; width:100%}
@@ -40,13 +40,9 @@
   }
   .options{display:grid; grid-template-columns:1fr; gap:10px}
   @media (min-width:580px){ .options{grid-template-columns:1fr 1fr} }
-  .option{font-size:clamp(18px,3.4vw,24px); text-align:center; position:relative}
+  .option{font-size:clamp(18px,3.4vw,24px); text-align:center}
   .option.correct{background:linear-gradient(180deg, #1f5a3c, #17472f); border-color:#2f9a6e}
   .option.wrong{background:linear-gradient(180deg, #632a34, #4a2028); border-color:#b34a4a}
-  .speaker{
-    position:absolute; right:8px; top:6px; font-size:16px; padding:4px 8px;
-    border:1px solid #3a46a8; border-radius:10px; background:#141a4b; user-select:none;
-  }
   .bar{display:flex; gap:10px; align-items:center; justify-content:space-between; margin:8px 0}
   .meter{flex:1; height:14px; border:2px solid var(--edge); border-radius:12px; overflow:hidden; background:#121642}
   .fill{height:100%; width:0%; background:linear-gradient(90deg, #62f3ff, #5be6a0)}
@@ -63,12 +59,11 @@
 <div class="app card">
   <header>
     <h1>🎯 French Word Game</h1>
-    <div class="pill">Answer and collect stars. Big buttons. Zero stress.</div>
+    <div class="pill">Tap an answer. Collect stars. Zero stress.</div>
   </header>
 
   <div class="row">
     <button id="dir" class="smallbtn">FR → EN</button>
-    <button id="speakQ" class="smallbtn">🔊 Say it</button>
     <button id="reset" class="smallbtn">↻ Reset</button>
   </div>
 
@@ -81,8 +76,7 @@
   <div class="options" id="options"></div>
 
   <div class="footer">
-    <div class="tiny">Tip: tap the small 🔊 on a word to hear it, otherwise just tap the big button.</div>
-    <div class="tiny">If sound is blocked, the quiz still works fine.</div>
+    <div class="tiny">20 questions fill the bar. Switch FR ↔ EN anytime.</div>
   </div>
 
   <h3 style="margin:14px 0 6px">📚 Quick Practice</h3>
@@ -111,7 +105,6 @@ const WORDS = [
 /* Helpers */
 const $ = id => document.getElementById(id);
 const shuffle = a => { for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; };
-const speak = (txt, lang) => { try{ const u=new SpeechSynthesisUtterance(txt); u.lang=lang; u.rate=0.98; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch{} };
 
 /* State */
 let dir = "FR2EN";
@@ -120,7 +113,6 @@ let stars = 0, lives = 3, asked = 0, current = null;
 /* Controls */
 $("dir").onclick = () => { dir = dir==="FR2EN" ? "EN2FR" : "FR2EN"; $("dir").textContent = dir==="FR2EN" ? "FR → EN" : "EN → FR"; nextQ(); };
 $("reset").onclick = () => { stars=0; lives=3; asked=0; updateHUD(); nextQ(); };
-$("speakQ").onclick = () => { if(!current) return; const t = dir==="FR2EN"?current.fr:current.en; speak(t, dir==="FR2EN"?"fr-FR":"en-US"); };
 
 function updateHUD(){
   $("stars").textContent = stars;
@@ -136,7 +128,6 @@ function nextQ(){
   const answer   = dir==="FR2EN" ? current.en : current.fr;
 
   $("prompt").textContent = `Translate: ${question}`;
-  $("prompt").dataset.say = question;
 
   const wrongs = shuffle(WORDS.filter(w => (dir==="FR2EN"?w.en:w.fr) !== answer)).slice(0,2)
                   .map(w => dir==="FR2EN" ? w.en : w.fr);
@@ -146,15 +137,9 @@ function nextQ(){
   choices.forEach(choice => {
     const btn = document.createElement("button");
     btn.className = "option bigbtn";
-    btn.dataset.choice = choice; // for reliable checks
-    btn.innerHTML = `<span class="label">${choice}</span><span class="speaker" role="button" aria-label="speak">🔊</span>`;
-    btn.addEventListener("click", (ev)=>{
-      if (ev.target.closest(".speaker")) { // only speak when the small speaker is clicked
-        speak(choice, dir==="FR2EN"?"en-US":"fr-FR");
-        return;
-      }
-      handleAnswer(choice, answer, btn, box);
-    });
+    btn.dataset.choice = choice;
+    btn.textContent = choice;
+    btn.addEventListener("click", ()=> handleAnswer(choice, answer, btn, box));
     box.appendChild(btn);
   });
 }
@@ -213,8 +198,8 @@ loop();
 function renderStudy(){
   const host = $("study"); host.innerHTML = "";
   shuffle([...WORDS]).slice(8).forEach(w=>{
-    const b1=document.createElement("button"); b1.textContent=w.fr+" 🔊"; b1.onclick=()=>speak(w.fr,"fr-FR"); host.appendChild(b1);
-    const b2=document.createElement("button"); b2.textContent=w.en+" 🔊"; b2.onclick=()=>speak(w.en,"en-US"); host.appendChild(b2);
+    const b1=document.createElement("button"); b1.textContent=w.fr; host.appendChild(b1);
+    const b2=document.createElement("button"); b2.textContent=w.en; host.appendChild(b2);
   });
 }
 
