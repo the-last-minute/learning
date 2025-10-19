@@ -83,7 +83,8 @@
     border:2px solid #4f5be0; background:linear-gradient(180deg, #2b358f, #212a6b);
     user-select:none; font-size:18px;
   }
-  .word.bad{border-color:#b34a4a; background:linear-gradient(180deg, #6a2b37, #4c2029)}
+  /* IMPORTANT: wrong words no longer look different */
+  .word.bad{border-color:#4f5be0; background:linear-gradient(180deg, #2b358f, #212a6b)}
   .boom{
     position:absolute; pointer-events:none; font-size:28px; transform:scale(1); animation:pop .4s ease-out forwards;
   }
@@ -285,7 +286,7 @@ function spawnWord(){
     : shuffle(WORDS.map(w => pDir==="FR2EN"?w.en:w.fr).filter(t => t !== currentMission.ans))[0];
 
   const w = document.createElement("div");
-  w.className = "word" + (correct ? "" : " bad");
+  w.className = "word" + (correct ? "" : " bad"); // visually identical now
   w.textContent = text;
   const r = arena.getBoundingClientRect();
   const x = Math.max(6, Math.random()*(r.width - 12 - 80));
