@@ -51,7 +51,7 @@
   .tiny{font-size:12px}
   #fx{position:fixed; inset:0; pointer-events:none}
 
-  /* --- Simple Arcade Practice --- */
+  /* --- CAR CRASH PRACTICE --- */
   .practice{
     margin-top:14px; border:2px solid var(--edge); border-radius:14px; padding:10px;
     background:linear-gradient(180deg, #242b6a, #1b2254);
@@ -60,29 +60,36 @@
   .p-top{display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap}
   .p-info{font-weight:900; color:var(--soft)}
   #arena{
-    position:relative; margin-top:8px; height:200px; overflow:hidden;
+    position:relative; margin-top:8px; height:260px; overflow:hidden;
     border:2px solid #3a46a8; border-radius:12px;
-    background:linear-gradient(180deg, #10153a, #121740 60%);
+    background:
+      radial-gradient(400px 160px at 80% -20%, rgba(255,255,255,.12) 0%, transparent 60%),
+      linear-gradient(180deg, #10153a, #121740 60%);
   }
-  .lane{
-    position:absolute; left:0; right:0; top:50%; transform:translateY(-50%);
-    height:64px; border-top:1px dashed rgba(255,255,255,.12); border-bottom:1px dashed rgba(255,255,255,.12);
+  #bigMission{
+    position:absolute; left:0; right:0; top:8px; text-align:center;
+    font-weight:900; font-size:clamp(18px,4.6vw,28px); letter-spacing:1px;
+    color:#ffe27a; text-shadow:0 2px 0 #000;
   }
-  .target{
-    position:absolute; top:50%; transform:translateY(-50%);
-    padding:10px 14px; border-radius:999px; font-weight:900; white-space:nowrap;
-    border:2px solid #4f5be0; background:linear-gradient(180deg, #2b358f, #212a6b);
+  .road{position:absolute; left:0; right:0; bottom:46px; height:4px; background:linear-gradient(90deg, rgba(255,255,255,.2) 0 30%, transparent 30% 60%, rgba(255,255,255,.2) 60% 90%, transparent 90% 100%)}
+  .car{
+    position:absolute; bottom:6px; width:64px; height:32px; line-height:32px; text-align:center; font-size:26px;
+    background:linear-gradient(180deg, #2b358f, #1f255f); border:2px solid #4f5be0; border-radius:10px;
     user-select:none;
   }
-  .target.bad{border-color:#b34a4a; background:linear-gradient(180deg, #6a2b37, #4c2029)}
+  .car::after{content:"🚗"; display:block; transform:translateY(-2px)}
+  .word{
+    position:absolute; top:-40px; padding:8px 12px; border-radius:999px; font-weight:900; white-space:nowrap;
+    border:2px solid #4f5be0; background:linear-gradient(180deg, #2b358f, #212a6b);
+    user-select:none; font-size:18px;
+  }
+  .word.bad{border-color:#b34a4a; background:linear-gradient(180deg, #6a2b37, #4c2029)}
   .boom{
     position:absolute; pointer-events:none; font-size:28px; transform:scale(1); animation:pop .4s ease-out forwards;
   }
   @keyframes pop{ to { transform:scale(1.6); opacity:0; } }
-  .canon{position:absolute; bottom:6px; left:50%; transform:translateX(-50%); font-size:24px; opacity:.8}
   .controls{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-  .sliderwrap{display:inline-flex; align-items:center; gap:6px; font-weight:800; color:var(--soft)}
-  input[type="range"]{accent-color:#62f3ff}
+  .modebtn{padding:6px 10px; font-size:13px}
 </style>
 </head>
 <body>
@@ -93,6 +100,7 @@
     <div class="pill">Tap an answer. Collect stars. Zero stress.</div>
   </header>
 
+  <!-- TOP QUIZ (unchanged) -->
   <div class="row">
     <button id="dir" class="smallbtn">FR → EN</button>
     <button id="reset" class="smallbtn">↻ Reset</button>
@@ -110,23 +118,26 @@
     <div class="tiny">20 questions fill the bar. Switch FR ↔ EN anytime.</div>
   </div>
 
-  <!-- ===== Simplified Arcade Practice ===== -->
+  <!-- ===== CAR CRASH PRACTICE ===== -->
   <section class="practice">
-    <h3>🎮 Arcade Practice</h3>
+    <h3>🚗 Car Crash Practice</h3>
     <div class="p-top">
-      <div class="p-info">Mission: <span id="mission">Press Start</span></div>
       <div class="p-info">Score: <span id="pScore">0</span> · Hits: <span id="pHits">0</span> · Misses: <span id="pMiss">0</span></div>
       <div class="controls">
         <button id="startPractice" class="smallbtn">▶ Start</button>
         <button id="stopPractice" class="smallbtn">■ Stop</button>
         <button id="swapPracticeDir" class="smallbtn">FR → EN</button>
-        <span class="sliderwrap">Speed <input id="speed" type="range" min="1" max="4" step="1" value="1" /></span>
+        <button data-speed="slow"  class="modebtn">Slow</button>
+        <button data-speed="med"   class="modebtn">Medium</button>
+        <button data-speed="fast"  class="modebtn">Fast</button>
       </div>
     </div>
     <div id="arena">
-      <div class="lane"></div>
-      <div class="canon">🔫</div>
+      <div id="bigMission">CRASH INTO THE RIGHT WORD</div>
+      <div class="road"></div>
+      <div id="car" class="car"></div>
     </div>
+    <p class="tiny" style="margin:8px 0 0">Controls: Arrow keys or A/D to steer. Big message shows what to hit.</p>
   </section>
 </div>
 
@@ -221,7 +232,7 @@ function buzz(freq=200){
   }catch{}
 }
 
-/* Confetti */
+/* Confetti (shared) */
 const fx = $("fx"); const ctx = fx.getContext("2d");
 function size(){ fx.width=innerWidth; fx.height=innerHeight; } addEventListener("resize", size); size();
 let parts=[];
@@ -239,34 +250,85 @@ function loop(){
 }
 loop();
 
-/* ===================== SIMPLE ARCADE PRACTICE ===================== */
+/* ===================== CAR CRASH PRACTICE ===================== */
 let pRunning = false;
 let pDir = "FR2EN";
 let pScore = 0, pHits = 0, pMiss = 0;
 let currentMission = null;
-let currentTargetEl = null;
+let wordEl = null;
+let carX = 0;
+let carSpeed = 6;      // move speed with keys
+let fallSpeed = 1.2;   // word fall speed
 let rafId = null;
-let px = 0;
-let speedPx = 1; // pixels per frame, controlled by slider
 
 const arena = $("arena");
-const mission = $("mission");
-const speedInput = $("speed");
+const bigMission = $("bigMission");
+const car = $("car");
 
-$("swapPracticeDir").onclick = ()=>{
-  pDir = pDir==="FR2EN" ? "EN2FR" : "FR2EN";
-  $("swapPracticeDir").textContent = pDir==="FR2EN" ? "FR → EN" : "EN → FR";
-  if(!pRunning) updateMission(); // show correct prompt when idle
-};
+function pickMission(){
+  const w = WORDS[Math.floor(Math.random()*WORDS.length)];
+  return { ask: pDir==="FR2EN" ? w.fr : w.en, ans: pDir==="FR2EN" ? w.en : w.fr };
+}
+function setBigMission(){
+  bigMission.textContent = `CRASH INTO THE RIGHT WORD: ${currentMission ? currentMission.ask : ""}`;
+}
+function resetCar(){
+  const r = arena.getBoundingClientRect();
+  carX = (r.width - 64) / 2;
+  car.style.left = carX + "px";
+}
+function spawnWord(){
+  removeWord();
+  const correct = Math.random() < 0.5;
+  const text = correct
+    ? currentMission.ans
+    : shuffle(WORDS.map(w => pDir==="FR2EN"?w.en:w.fr).filter(t => t !== currentMission.ans))[0];
 
-speedInput.addEventListener("input", ()=>{
-  // map 1..4 to gentle speeds
-  const map = {1:1, 2:1.5, 3:2, 4:3};
-  speedPx = map[speedInput.value] || 1;
-});
+  const w = document.createElement("div");
+  w.className = "word" + (correct ? "" : " bad");
+  w.textContent = text;
+  const r = arena.getBoundingClientRect();
+  const x = Math.max(6, Math.random()*(r.width - 12 - 80));
+  w.style.left = x + "px";
+  w.style.top = "-40px";
+  w.dataset.correct = correct ? "1" : "0";
+  arena.appendChild(w);
+  wordEl = w;
+}
+function removeWord(){ if(wordEl){ wordEl.remove(); wordEl=null; } }
+
+function startPractice(){
+  if(pRunning) return;
+  pRunning = true;
+  pScore = 0; pHits = 0; pMiss = 0; updatePracticeHUD();
+  currentMission = pickMission();
+  setBigMission();
+  resetCar();
+  spawnWord();
+  loopCar();
+}
+function stopPractice(){
+  pRunning = false;
+  cancelAnimationFrame(rafId); rafId = null;
+  removeWord();
+  setBigMission();
+}
 
 $("startPractice").onclick = startPractice;
 $("stopPractice").onclick  = stopPractice;
+$("swapPracticeDir").onclick = ()=>{
+  pDir = pDir==="FR2EN" ? "EN2FR" : "FR2EN";
+  $("swapPracticeDir").textContent = pDir==="FR2EN" ? "FR → EN" : "EN → FR";
+  if(!pRunning){ currentMission = pickMission(); setBigMission(); }
+};
+document.querySelectorAll(".modebtn").forEach(b=>{
+  b.onclick = ()=>{
+    const m = b.dataset.speed;
+    if(m==="slow")  fallSpeed = 0.9;
+    if(m==="med")   fallSpeed = 1.4;
+    if(m==="fast")  fallSpeed = 2.2;
+  };
+});
 
 function updatePracticeHUD(){
   $("pScore").textContent = pScore;
@@ -274,119 +336,78 @@ function updatePracticeHUD(){
   $("pMiss").textContent  = pMiss;
 }
 
-function pickMission(){
-  const w = WORDS[Math.floor(Math.random()*WORDS.length)];
-  return { ask: pDir==="FR2EN" ? w.fr : w.en, ans: pDir==="FR2EN" ? w.en : w.fr };
-}
+/* Controls: Arrow keys or A/D */
+const keys = {left:false, right:false};
+window.addEventListener("keydown", e=>{
+  if(e.key==="ArrowLeft"||e.key==="a"||e.key==="A"){ e.preventDefault(); keys.left=true; }
+  if(e.key==="ArrowRight"||e.key==="d"||e.key==="D"){ e.preventDefault(); keys.right=true; }
+});
+window.addEventListener("keyup", e=>{
+  if(e.key==="ArrowLeft"||e.key==="a"||e.key==="A"){ keys.left=false; }
+  if(e.key==="ArrowRight"||e.key==="d"||e.key==="D"){ keys.right=false; }
+});
 
-function updateMission(){
-  if(!currentMission) currentMission = pickMission();
-  mission.textContent = pDir==="FR2EN"
-    ? `Shoot the English for: ${currentMission.ask}`
-    : `Shoot the French for: ${currentMission.ask}`;
-}
+/* Game loop for practice */
+let wordY = -40;
+function loopCar(){
+  if(!pRunning){ return; }
 
-function startPractice(){
-  if(pRunning) return;
-  pRunning = true;
-  pScore = 0; pHits = 0; pMiss = 0; updatePracticeHUD();
-  currentMission = pickMission();
-  clearArena();
-  spawnTarget();
-  loopTarget();
-}
-
-function stopPractice(){
-  pRunning = false;
-  cancelAnimationFrame(rafId);
-  rafId = null;
-  clearArena();
-  updateMission();
-}
-
-function clearArena(){
-  arena.innerHTML = '<div class="lane"></div><div class="canon">🔫</div>';
-  currentTargetEl = null;
-}
-
-function spawnTarget(){
-  // decide if this target is the correct translation or a random distractor
-  const correctText = currentMission.ans;
-  const distractorPool = shuffle(WORDS.map(w => pDir==="FR2EN" ? w.en : w.fr).filter(t => t !== correctText));
-  const isCorrect = Math.random() < 0.5; // half the time correct
-  const text = isCorrect ? correctText : distractorPool[0];
-
-  const t = document.createElement("div");
-  t.className = "target" + (isCorrect ? "" : " bad");
-  t.textContent = text;
-  t.dataset.correct = isCorrect ? "1" : "0";
-  arena.appendChild(t);
-
-  // start just off the right edge
-  px = arena.clientWidth + 20;
-  t.style.left = px + "px";
-  currentTargetEl = t;
-
-  t.addEventListener("click", ev=>{
-    if(!pRunning || !currentTargetEl) return;
-    const ok = t.dataset.correct === "1";
-    if(ok){
-      pHits++; pScore += 5; kaboom(ev.clientX, ev.clientY, "💥");
-      // new mission after a correct hit
-      currentMission = pickMission();
-      updatePracticeHUD();
-      updateMission();
-    }else{
-      pMiss++; pScore = Math.max(0, pScore - 2); kaboom(ev.clientX, ev.clientY, "💢");
-      updatePracticeHUD();
-      // keep the same mission so he waits for the real one
-    }
-    // remove and spawn the next target
-    t.remove();
-    currentTargetEl = null;
-    spawnTarget();
-  });
-
-  updateMission();
-}
-
-function loopTarget(){
-  if(!pRunning || !currentTargetEl){ if(pRunning) rafId = requestAnimationFrame(loopTarget); return; }
-  px -= speedPx; // move left
-  currentTargetEl.style.left = px + "px";
-
-  if(px < -currentTargetEl.offsetWidth - 20){
-    // escaped off the left
-    if(currentTargetEl.dataset.correct === "1"){
-      pMiss++; updatePracticeHUD();
-      // new mission if we missed the correct one
-      currentMission = pickMission();
-    }
-    currentTargetEl.remove();
-    currentTargetEl = null;
-    spawnTarget();
-  }
-  rafId = requestAnimationFrame(loopTarget);
-}
-
-function kaboom(pxAbs, pyAbs, emoji){
+  // move car
   const r = arena.getBoundingClientRect();
+  carX += (keys.right?carSpeed:0) - (keys.left?carSpeed:0);
+  carX = Math.max(2, Math.min(r.width - 66, carX));
+  car.style.left = carX + "px";
+
+  // move word
+  if(wordEl){
+    wordY = (parseFloat(wordEl.style.top) || -40) + fallSpeed;
+    wordEl.style.top = wordY + "px";
+
+    // collision check
+    const carRect = car.getBoundingClientRect();
+    const wRect = wordEl.getBoundingClientRect();
+    const overlap = !(carRect.right < wRect.left || carRect.left > wRect.right || carRect.bottom < wRect.top || carRect.top > wRect.bottom);
+
+    if(overlap){
+      const ok = wordEl.dataset.correct === "1";
+      kaboomCenter(wordEl, ok ? "💥" : "💢");
+      if(ok){
+        pHits++; pScore += 5; currentMission = pickMission(); setBigMission(); confetti();
+      }else{
+        pMiss++; pScore = Math.max(0, pScore - 2);
+        // keep same mission to reinforce
+      }
+      updatePracticeHUD();
+      spawnWord();
+    }else if(wordY > r.height){ // escaped
+      if(wordEl.dataset.correct === "1"){
+        pMiss++; updatePracticeHUD();
+        currentMission = pickMission(); setBigMission();
+      }
+      spawnWord();
+    }
+  }
+
+  rafId = requestAnimationFrame(loopCar);
+}
+function kaboomCenter(el, emoji){
+  const rA = arena.getBoundingClientRect();
+  const r = el.getBoundingClientRect();
   const e = document.createElement("div");
   e.className = "boom";
   e.textContent = emoji;
-  e.style.left = (pxAbs - r.left - 14) + "px";
-  e.style.top  = (pyAbs - r.top  - 14) + "px";
+  e.style.left = (r.left - rA.left + r.width/2 - 14) + "px";
+  e.style.top  = (r.top  - rA.top  + r.height/2 - 14) + "px";
   arena.appendChild(e);
   setTimeout(()=>e.remove(), 400);
 }
 
-/* Start the quiz immediately */
-updateHUD();
-nextQ();
+/* Kick off quiz and prep practice */
+updateHUD(); nextQ();
+currentMission = pickMission(); setBigMission();
 
-/* Initialize practice UI */
-updateMission();
-speedInput.dispatchEvent(new Event("input")); // set initial speed
+/* Resize handling */
+window.addEventListener("resize", resetCar);
 </script>
 </body>
 </html>
