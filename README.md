@@ -1,2 +1,2 @@
 # learning
-stuff for my kids' learning
+just a thing for my kid to learn french
