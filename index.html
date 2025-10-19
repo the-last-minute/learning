@@ -40,9 +40,13 @@
   }
   .options{display:grid; grid-template-columns:1fr; gap:10px}
   @media (min-width:580px){ .options{grid-template-columns:1fr 1fr} }
-  .option{font-size:clamp(18px,3.4vw,24px); text-align:center}
+  .option{font-size:clamp(18px,3.4vw,24px); text-align:center; position:relative}
   .option.correct{background:linear-gradient(180deg, #1f5a3c, #17472f); border-color:#2f9a6e}
   .option.wrong{background:linear-gradient(180deg, #632a34, #4a2028); border-color:#b34a4a}
+  .speaker{
+    position:absolute; right:8px; top:6px; font-size:16px; padding:4px 8px;
+    border:1px solid #3a46a8; border-radius:10px; background:#141a4b; user-select:none;
+  }
   .bar{display:flex; gap:10px; align-items:center; justify-content:space-between; margin:8px 0}
   .meter{flex:1; height:14px; border:2px solid var(--edge); border-radius:12px; overflow:hidden; background:#121642}
   .fill{height:100%; width:0%; background:linear-gradient(90deg, #62f3ff, #5be6a0)}
@@ -77,8 +81,8 @@
   <div class="options" id="options"></div>
 
   <div class="footer">
-    <div class="tiny">Tip: tap the little speaker on any word to hear it.</div>
-    <div class="tiny">Need quiet? Ignore the speaker buttons.</div>
+    <div class="tiny">Tip: tap the small 🔊 on a word to hear it, otherwise just tap the big button.</div>
+    <div class="tiny">If sound is blocked, the quiz still works fine.</div>
   </div>
 
   <h3 style="margin:14px 0 6px">📚 Quick Practice</h3>
@@ -104,26 +108,19 @@ const WORDS = [
   {fr:"Voix", en:"Voice"}, {fr:"Jambes", en:"Legs"}
 ];
 
-/* Simple helpers */
+/* Helpers */
 const $ = id => document.getElementById(id);
-const speak = (txt, lang) => {
-  if(!window.speechSynthesis) return;
-  const u = new SpeechSynthesisUtterance(txt);
-  u.lang = lang; u.rate = 0.98; speechSynthesis.cancel(); speechSynthesis.speak(u);
-};
 const shuffle = a => { for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; };
+const speak = (txt, lang) => { try{ const u=new SpeechSynthesisUtterance(txt); u.lang=lang; u.rate=0.98; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch{} };
 
 /* State */
-let dir = "FR2EN";    // or EN2FR
-let stars = 0;
-let lives = 3;
-let asked = 0;
-let current = null;
+let dir = "FR2EN";
+let stars = 0, lives = 3, asked = 0, current = null;
 
-/* UI elements */
+/* Controls */
 $("dir").onclick = () => { dir = dir==="FR2EN" ? "EN2FR" : "FR2EN"; $("dir").textContent = dir==="FR2EN" ? "FR → EN" : "EN → FR"; nextQ(); };
 $("reset").onclick = () => { stars=0; lives=3; asked=0; updateHUD(); nextQ(); };
-$("speakQ").onclick = () => { if(!current) return; const text = dir==="FR2EN" ? current.fr : current.en; speak(text, dir==="FR2EN"?"fr-FR":"en-US"); };
+$("speakQ").onclick = () => { if(!current) return; const t = dir==="FR2EN"?current.fr:current.en; speak(t, dir==="FR2EN"?"fr-FR":"en-US"); };
 
 function updateHUD(){
   $("stars").textContent = stars;
@@ -131,17 +128,16 @@ function updateHUD(){
   $("pFill").style.width = Math.min(100, (asked/20)*100) + "%";
 }
 
-/* Build a very simple question */
+/* Question */
 function nextQ(){
   asked++; updateHUD();
   current = WORDS[Math.floor(Math.random()*WORDS.length)];
   const question = dir==="FR2EN" ? current.fr : current.en;
-  const answer = dir==="FR2EN" ? current.en : current.fr;
+  const answer   = dir==="FR2EN" ? current.en : current.fr;
 
   $("prompt").textContent = `Translate: ${question}`;
   $("prompt").dataset.say = question;
 
-  // 3 choices: 1 correct, 2 random wrong
   const wrongs = shuffle(WORDS.filter(w => (dir==="FR2EN"?w.en:w.fr) !== answer)).slice(0,2)
                   .map(w => dir==="FR2EN" ? w.en : w.fr);
   const choices = shuffle([answer, ...wrongs]);
@@ -150,11 +146,15 @@ function nextQ(){
   choices.forEach(choice => {
     const btn = document.createElement("button");
     btn.className = "option bigbtn";
-    btn.innerHTML = `${choice} <span class="smallbtn" style="float:right">🔊</span>`;
-    btn.onclick = (ev)=>{
-      if(ev.target.textContent.includes("🔊")){ speak(choice, dir==="FR2EN"?"en-US":"fr-FR"); ev.stopPropagation(); return; }
+    btn.dataset.choice = choice; // for reliable checks
+    btn.innerHTML = `<span class="label">${choice}</span><span class="speaker" role="button" aria-label="speak">🔊</span>`;
+    btn.addEventListener("click", (ev)=>{
+      if (ev.target.closest(".speaker")) { // only speak when the small speaker is clicked
+        speak(choice, dir==="FR2EN"?"en-US":"fr-FR");
+        return;
+      }
       handleAnswer(choice, answer, btn, box);
-    };
+    });
     box.appendChild(btn);
   });
 }
@@ -165,15 +165,17 @@ function handleAnswer(choice, answer, btn, box){
     btn.classList.add("correct"); stars += 2; confetti(); ding(880);
     setTimeout(()=>{ nextQ(); }, 600);
   }else{
-    btn.classList.add("wrong"); buttons.find(b=>b.textContent.startsWith(answer)).classList.add("correct");
+    btn.classList.add("wrong");
+    const correctBtn = buttons.find(b => b.dataset.choice === answer);
+    if(correctBtn) correctBtn.classList.add("correct");
     lives--; buzz(220);
-    if(lives<=0){ setTimeout(()=>{ alert("Game over. Nice try. Starting again."); $("reset").click(); }, 350); }
+    if(lives<=0){ setTimeout(()=>{ alert("Game over. Starting again."); $("reset").click(); }, 350); }
     else setTimeout(()=>{ nextQ(); }, 700);
   }
   updateHUD();
 }
 
-/* Small sounds */
+/* Tiny sounds */
 function ding(freq=700){
   try{
     const a=new (window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(), g=a.createGain();
@@ -189,24 +191,25 @@ function buzz(freq=200){
   }catch{}
 }
 
-/* Confetti (tiny and lightweight) */
-const fx = $("fx"); const ctx = fx.getContext("2d"); function size(){ fx.width=innerWidth; fx.height=innerHeight; } addEventListener("resize", size); size();
-let particles=[];
+/* Confetti */
+const fx = $("fx"); const ctx = fx.getContext("2d");
+function size(){ fx.width=innerWidth; fx.height=innerHeight; } addEventListener("resize", size); size();
+let parts=[];
 function confetti(){
   for(let i=0;i<18;i++){
-    particles.push({x:innerWidth*.5, y:120, vx:(Math.random()*6-3), vy:(Math.random()*-6-2), g:.25, a:1, s:3+Math.random()*3, h:Math.floor(Math.random()*360)});
+    parts.push({x:innerWidth*.5, y:120, vx:(Math.random()*6-3), vy:(Math.random()*-6-2), g:.25, a:1, s:3+Math.random()*3, h:Math.floor(Math.random()*360)});
   }
 }
 function loop(){
   ctx.clearRect(0,0,fx.width,fx.height);
-  particles.forEach(p=>{ p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.a-=.02; });
-  particles = particles.filter(p=>p.a>0 && p.y<innerHeight+20);
-  particles.forEach(p=>{ ctx.globalAlpha=p.a; ctx.fillStyle=`hsl(${p.h} 90% 60%)`; ctx.fillRect(p.x,p.y,p.s,p.s); });
+  parts.forEach(p=>{ p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.a-=.02; });
+  parts = parts.filter(p=>p.a>0 && p.y<innerHeight+20);
+  parts.forEach(p=>{ ctx.globalAlpha=p.a; ctx.fillStyle=`hsl(${p.h} 90% 60%)`; ctx.fillRect(p.x,p.y,p.s,p.s); });
   requestAnimationFrame(loop);
 }
 loop();
 
-/* Little practice area: tap to hear words */
+/* Practice area */
 function renderStudy(){
   const host = $("study"); host.innerHTML = "";
   shuffle([...WORDS]).slice(8).forEach(w=>{
@@ -215,7 +218,7 @@ function renderStudy(){
   });
 }
 
-/* Start the game */
+/* Start */
 renderStudy();
 updateHUD();
 nextQ();
