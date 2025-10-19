@@ -83,10 +83,10 @@
     border:2px solid #4f5be0; background:linear-gradient(180deg, #2b358f, #212a6b);
     user-select:none; font-size:18px;
   }
-  /* IMPORTANT: wrong words no longer look different */
+  /* wrong words look the same as correct ones */
   .word.bad{border-color:#4f5be0; background:linear-gradient(180deg, #2b358f, #212a6b)}
   .boom{
-    position:absolute; pointer-events:none; font-size:28px; transform:scale(1); animation:pop .4s ease-out forwards;
+    position:absolute; pointer-events:none; font-size:32px; transform:scale(1); animation:pop .45s ease-out forwards;
   }
   @keyframes pop{ to { transform:scale(1.6); opacity:0; } }
   .controls{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
@@ -286,7 +286,7 @@ function spawnWord(){
     : shuffle(WORDS.map(w => pDir==="FR2EN"?w.en:w.fr).filter(t => t !== currentMission.ans))[0];
 
   const w = document.createElement("div");
-  w.className = "word" + (correct ? "" : " bad"); // visually identical now
+  w.className = "word" + (correct ? "" : " bad"); // visually identical
   w.textContent = text;
   const r = arena.getBoundingClientRect();
   const x = Math.max(6, Math.random()*(r.width - 12 - 80));
@@ -371,7 +371,7 @@ function loopCar(){
 
     if(overlap){
       const ok = wordEl.dataset.correct === "1";
-      kaboomCenter(wordEl, ok ? "💥" : "💢");
+      kaboomCenter(wordEl, ok ? "✅" : "❌");  // <-- check mark / red X
       if(ok){
         pHits++; pScore += 5; currentMission = pickMission(); setBigMission(); confetti();
       }else{
@@ -400,7 +400,7 @@ function kaboomCenter(el, emoji){
   e.style.left = (r.left - rA.left + r.width/2 - 14) + "px";
   e.style.top  = (r.top  - rA.top  + r.height/2 - 14) + "px";
   arena.appendChild(e);
-  setTimeout(()=>e.remove(), 400);
+  setTimeout(()=>e.remove(), 450);
 }
 
 /* Kick off quiz and prep practice */
