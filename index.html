@@ -3,176 +3,91 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>French Fairy Tale Quest — Power-Ups Edition</title>
+<title>French Word Game — Simple & Fun</title>
 <style>
   :root{
-    --bg:#0f1226; --card:#181c3a; --ink:#e8ecff; --muted:#aab1ff; --accent:#5cf2d6; --accent2:#ffdd57; --good:#6cf28b; --bad:#ff6b6b;
+    --bg:#1b1f3a; --card:#222757; --ink:#ffffff; --soft:#c9d2ff; --good:#57e389; --bad:#ff6b6b; --edge:#3640a0;
   }
   *{box-sizing:border-box}
   body{
-    margin:0; font-family:system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans";
-    background: radial-gradient(1200px 600px at 20% -10%, #253175 0%, transparent 60%),
-                radial-gradient(900px 700px at 100% 0%, #2a215a 0%, transparent 60%),
-                var(--bg);
-    color:var(--ink);
-    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:16px;
+    margin:0; font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans";
+    background:radial-gradient(900px 600px at 10% -10%, #2a3377 0%, transparent 60%) , var(--bg);
+    color:var(--ink); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:16px;
   }
-  .app{max-width:1040px; width:100%; }
-  header{
-    display:flex; gap:12px; align-items:center; justify-content:space-between; margin-bottom:10px;
-  }
-  h1{font-size: clamp(22px, 3vw, 32px); margin:0}
-  .chapter{font-weight:800; color:var(--accent2)}
-  .pill{
-    background:linear-gradient(135deg, #2a2f63, #232852); color:var(--ink); border:1px solid #3a448a;
-    padding:8px 12px; border-radius:999px; font-weight:600; box-shadow:0 10px 24px rgba(0,0,0,.18) inset, 0 0 0 1px rgba(255,255,255,.04) inset;
-  }
-  .wrap{display:grid; grid-template-columns: 1.15fr .85fr; gap:14px}
-  @media (max-width:960px){ .wrap{grid-template-columns:1fr} }
-
+  .app{max-width:900px; width:100%}
   .card{
-    background:linear-gradient(175deg, #1b2044, #15193a 60%); border:1px solid #2b356d; border-radius:18px; padding:14px;
-    box-shadow: 0 8px 28px rgba(0,0,0,.35), 0 2px 0 1px rgba(255,255,255,.03) inset;
+    background:linear-gradient(180deg, #262b66, #1d2352);
+    border:2px solid var(--edge); border-radius:18px; box-shadow:0 12px 28px rgba(0,0,0,.35);
+    padding:16px;
   }
-  .toolbar{display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between}
-  .toolbar .row{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
-
-  button, .btn{
-    appearance:none; border:1px solid #33408e; background:linear-gradient(180deg, #2a3271, #242a5b);
-    color:var(--ink); padding:10px 14px; border-radius:12px; font-weight:700; cursor:pointer;
-    box-shadow:0 8px 18px rgba(0,0,0,.25), 0 0 0 1px rgba(255,255,255,.04) inset; transition:.15s transform,.2s filter,.2s background;
+  header{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px}
+  h1{margin:0; font-size:clamp(22px,4vw,32px)}
+  .pill{background:#121642; border:1px solid #303a94; padding:6px 10px; border-radius:999px; color:var(--soft); font-weight:700}
+  .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  button{
+    appearance:none; cursor:pointer; border-radius:14px; font-weight:800; color:var(--ink);
+    border:2px solid #3a46a8; background:linear-gradient(180deg, #2b3484, #232a66); padding:12px 16px;
+    box-shadow:0 8px 18px rgba(0,0,0,.25); transition:transform .1s, filter .15s;
   }
   button:hover{ filter:brightness(1.05) }
   button:active{ transform:translateY(2px) }
-
-  .map{display:grid; grid-template-columns:repeat(6,1fr); gap:6px; margin:8px 0 2px}
-  .node{background:#121642; border:1px solid #2b356d; border-radius:10px; height:12px; position:relative; overflow:hidden}
-  .node .fill{position:absolute; inset:0; width:0%; background:linear-gradient(90deg, var(--accent), #70f7ff)}
-  .node.done{outline:2px solid var(--accent2)}
-  .mapnames{display:flex; justify-content:space-between; gap:6px; color:var(--muted); font-size:11px}
-
-  .statbar{
-    display:grid; grid-template-columns: 1.2fr .8fr .8fr; gap:10px; margin:8px 0 12px;
-  }
-  @media (max-width:540px){ .statbar{grid-template-columns:1fr} }
-  .progress, .health, .timer{
-    background:#10133a; border:1px solid #2b356d; border-radius:12px; overflow:hidden; height:14px; position:relative;
-  }
-  .progress .fill{background:linear-gradient(90deg, var(--accent), #70f7ff); height:100%; width:0%}
-  .health .fill{background:linear-gradient(90deg, #ff8a8a, var(--bad)); height:100%; width:100%}
-  .timer .fill{background:linear-gradient(90deg, #ffd45b, #ff8a00); height:100%; width:100%}
-  .meta{display:flex; gap:10px; flex-wrap:wrap; font-weight:700; color:var(--muted); font-size:14px}
-
+  .bigbtn{font-size:clamp(18px,3.2vw,22px)}
+  .smallbtn{font-size:14px; padding:8px 10px}
   .prompt{
-    font-size: clamp(18px, 3.2vw, 26px); margin:6px 0 12px; font-weight:900;
-    background:linear-gradient(90deg, #fff, #c7d2ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    margin:8px 0 12px; font-size:clamp(20px,4.4vw,28px); font-weight:900;
+    background:linear-gradient(90deg, #fff, #cfe5ff);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
   }
-  .options{display:grid; grid-template-columns:1fr 1fr; gap:10px}
-  @media (max-width:680px){ .options{grid-template-columns:1fr} }
-  .option{
-    background:linear-gradient(170deg, #2b2f6d, #24295c); border:1px solid #3d4796; border-radius:14px; padding:14px;
-    font-size:18px; font-weight:800; cursor:pointer; text-align:left; position:relative;
-  }
-  .option.correct{outline:2px solid var(--good); background:linear-gradient(170deg, #254b37, #203f2f)}
-  .option.wrong{outline:2px solid var(--bad); background:linear-gradient(170deg, #4a2331, #3b1c28)}
-  .speak{
-    position:absolute; right:10px; top:10px; background:#0f143d; border:1px solid #3b4692; border-radius:10px; padding:6px 8px; font-weight:900;
-  }
-
-  /* MATCH GAME */
-  .grid{display:grid; gap:10px; grid-template-columns:repeat(4,1fr)}
-  @media (max-width:680px){ .grid{grid-template-columns:repeat(2,1fr)} }
-  .tile{
-    padding:14px; min-height:72px; display:flex; align-items:center; justify-content:center; text-align:center;
-    border-radius:14px; border:1px solid #3b4692; background:linear-gradient(180deg, #202861, #1a204a); cursor:pointer; font-weight:900;
-  }
-  .tile.revealed{background:linear-gradient(180deg, #264e3a, #213e30); border-color:#2e9e74}
-  .tile.solved{background:linear-gradient(180deg, #2a2f6d, #232852); border-color:#4650a5; opacity:.6; cursor:default}
-
-  .footer{display:flex; gap:8px; flex-wrap:wrap; justify-content:space-between; align-items:center; margin-top:10px; color:var(--muted)}
+  .options{display:grid; grid-template-columns:1fr; gap:10px}
+  @media (min-width:580px){ .options{grid-template-columns:1fr 1fr} }
+  .option{font-size:clamp(18px,3.4vw,24px); text-align:center}
+  .option.correct{background:linear-gradient(180deg, #1f5a3c, #17472f); border-color:#2f9a6e}
+  .option.wrong{background:linear-gradient(180deg, #632a34, #4a2028); border-color:#b34a4a}
+  .bar{display:flex; gap:10px; align-items:center; justify-content:space-between; margin:8px 0}
+  .meter{flex:1; height:14px; border:2px solid var(--edge); border-radius:12px; overflow:hidden; background:#121642}
+  .fill{height:100%; width:0%; background:linear-gradient(90deg, #62f3ff, #5be6a0)}
+  .stats{font-weight:900; color:var(--soft)}
+  .footer{display:flex; gap:8px; align-items:center; justify-content:space-between; margin-top:10px; color:var(--soft)}
+  .study{margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:6px}
+  .study button{padding:10px; font-size:16px}
   .tiny{font-size:12px}
-  .big{font-size:18px; font-weight:900}
-
-  /* Inventory */
-  .inv{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
-  .chip{display:flex; gap:6px; align-items:center}
-  .chip b{min-width:20px; text-align:center}
-
   #fx{position:fixed; inset:0; pointer-events:none}
-  #dragon{font-size:30px}
 </style>
 </head>
 <body>
 <canvas id="fx"></canvas>
-<div class="app">
+<div class="app card">
   <header>
-    <h1>🧙‍♂️ French Fairy Tale Quest <span class="chapter" id="chapterName">— Chapter 1: Pumpkin Woods</span></h1>
-    <div class="pill" id="motto">Answer fast for bonus stars. Earn power-ups. Beat bosses!</div>
+    <h1>🎯 French Word Game</h1>
+    <div class="pill">Answer and collect stars. Big buttons. Zero stress.</div>
   </header>
 
-  <div class="map" id="map"></div>
-  <div class="mapnames" id="mapnames"></div>
-
-  <div class="wrap">
-    <!-- LEFT: Game area -->
-    <section class="card" id="game">
-      <div class="toolbar">
-        <div class="row">
-          <button id="modeQuiz" title="Multiple choice quiz">🎯 Quiz</button>
-          <button id="modeMatch" title="Memory match with pairs">🧩 Boss: Match</button>
-          <button id="toggleDir" title="Switch direction (French ↔ English)">🔄 FR → EN</button>
-          <button id="hearPrompt" title="Hear the prompt out loud">🔊 Speak</button>
-        </div>
-        <div class="row inv">
-          <span class="chip"><button id="use5050" title="Remove two wrong answers">🪄 50-50</button><b id="cnt5050">0</b></span>
-          <span class="chip"><button id="useShield" title="Block the next miss">🛡️ Shield</button><b id="cntShield">0</b></span>
-          <span class="chip"><button id="useDouble" title="Double next win">✨ x2</button><b id="cntDouble">0</b></span>
-          <button id="reset">↻ Reset</button>
-        </div>
-      </div>
-
-      <div class="statbar">
-        <div class="progress" title="Quest progress"><div class="fill" id="pFill"></div></div>
-        <div class="health" title="Hearts"><div class="fill" id="hFill"></div></div>
-        <div class="timer" title="Timer"><div class="fill" id="tFill"></div></div>
-      </div>
-      <div class="meta" id="meta"></div>
-
-      <div id="quizArea" style="display:block">
-        <div class="prompt" id="prompt">Ready?</div>
-        <div class="options" id="options"></div>
-      </div>
-
-      <div id="matchArea" style="display:none">
-        <div class="prompt" id="matchLabel">Boss! Find the matching pairs</div>
-        <div class="grid" id="grid"></div>
-      </div>
-
-      <div class="footer">
-        <div class="big">⭐ Stars: <span id="stars">0</span> · <span id="dragon">🐉</span></div>
-        <div>Streak: <span id="streak">0</span> · Misses left: <span id="misses">3</span></div>
-        <div class="tiny">Tip: tap any little speaker to hear words out loud.</div>
-      </div>
-    </section>
-
-    <!-- RIGHT: Study & review -->
-    <aside class="card">
-      <h3 style="margin-top:0">📚 Study List</h3>
-      <p class="tiny" style="margin-top:-6px">Tap a word to hear it. Toggle below to flip columns.</p>
-      <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap">
-        <button id="flipTable">Flip Columns</button>
-        <button id="exportMistakes">Export mistakes</button>
-      </div>
-      <div id="table"></div>
-    </aside>
+  <div class="row">
+    <button id="dir" class="smallbtn">FR → EN</button>
+    <button id="speakQ" class="smallbtn">🔊 Say it</button>
+    <button id="reset" class="smallbtn">↻ Reset</button>
   </div>
+
+  <div class="bar">
+    <div class="meter"><div id="pFill" class="fill"></div></div>
+    <div class="stats">⭐ <span id="stars">0</span> · ❤️ <span id="lives">3</span></div>
+  </div>
+
+  <div class="prompt" id="prompt">Ready?</div>
+  <div class="options" id="options"></div>
+
+  <div class="footer">
+    <div class="tiny">Tip: tap the little speaker on any word to hear it.</div>
+    <div class="tiny">Need quiet? Ignore the speaker buttons.</div>
+  </div>
+
+  <h3 style="margin:14px 0 6px">📚 Quick Practice</h3>
+  <div class="study" id="study"></div>
 </div>
 
 <script>
-/* =========================
-   DATA: Words from the test
-   ========================= */
-const entries = [
+/* Words (from your sheet) */
+const WORDS = [
   {fr:"Carrosse", en:"Carriage"}, {fr:"Citrouille", en:"Pumpkin"}, {fr:"Pantoufle", en:"Slipper"},
   {fr:"Château", en:"Castle"}, {fr:"Minuit", en:"Midnight"}, {fr:"Perdre", en:"To Lose"},
   {fr:"Vilaines", en:"Evil"}, {fr:"Bal", en:"A Ball/Dance"}, {fr:"Baguette Magique", en:"Wand"},
@@ -189,463 +104,121 @@ const entries = [
   {fr:"Voix", en:"Voice"}, {fr:"Jambes", en:"Legs"}
 ];
 
-/* ========= Helpers ========= */
-const byId = id => document.getElementById(id);
-const rand = n => Math.floor(Math.random()*n);
-function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=rand(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; }
-const speak = (txt, lang="fr-FR") => {
-  if (!window.speechSynthesis) return;
+/* Simple helpers */
+const $ = id => document.getElementById(id);
+const speak = (txt, lang) => {
+  if(!window.speechSynthesis) return;
   const u = new SpeechSynthesisUtterance(txt);
-  u.lang = lang; u.rate = 0.98; u.pitch = 1.0;
-  speechSynthesis.cancel(); speechSynthesis.speak(u);
+  u.lang = lang; u.rate = 0.98; speechSynthesis.cancel(); speechSynthesis.speak(u);
 };
-const beep = (freq=660, dur=120, type="sine")=>{
-  try{
-    const a=new (window.AudioContext||window.webkitAudioContext)();
-    const o=a.createOscillator(), g=a.createGain();
-    o.type=type; o.frequency.value=freq; o.connect(g); g.connect(a.destination);
-    g.gain.value=.08; o.start(); setTimeout(()=>{ g.gain.exponentialRampToValueAtTime(0.00001,a.currentTime+0.05); o.stop(); a.close();}, dur);
-  }catch{}
-};
+const shuffle = a => { for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; };
 
-/* ======= Chapters / Map ======= */
-const CHAPTERS = [
-  "Pumpkin Woods", "Crystal Lake", "Whispering Caves", "Royal Courtyard", "Sea of Sirènes", "Castle Gates"
-];
-function renderMap(){
-  const map = byId("map"), names=byId("mapnames"); map.innerHTML=""; names.innerHTML="";
-  CHAPTERS.forEach((n,i)=>{
-    const node=document.createElement("div"); node.className="node"; node.dataset.index=i;
-    const fill=document.createElement("div"); fill.className="fill"; node.appendChild(fill); map.appendChild(node);
-    const label=document.createElement("div"); label.textContent=n; names.appendChild(label);
-  });
-}
-renderMap();
+/* State */
+let dir = "FR2EN";    // or EN2FR
+let stars = 0;
+let lives = 3;
+let asked = 0;
+let current = null;
 
-/* ======= State ======= */
-let dir = "FR2EN";           // FR2EN or EN2FR
-let mode = "QUIZ";           // QUIZ or MATCH
-let stars = 0, streak = 0, misses = 3, asked = 0, progress = 0;
-let pool = []; let mistakes = [];
-let timer=null, timeMax=12, timeLeft=timeMax;
-let doubleNext=false, shield=false;
-const inventory = {fifty:0, shield:0, dbl:0};
-let correctThisRun = 0; // for boss triggers
+/* UI elements */
+$("dir").onclick = () => { dir = dir==="FR2EN" ? "EN2FR" : "FR2EN"; $("dir").textContent = dir==="FR2EN" ? "FR → EN" : "EN → FR"; nextQ(); };
+$("reset").onclick = () => { stars=0; lives=3; asked=0; updateHUD(); nextQ(); };
+$("speakQ").onclick = () => { if(!current) return; const text = dir==="FR2EN" ? current.fr : current.en; speak(text, dir==="FR2EN"?"fr-FR":"en-US"); };
 
-/* ======= Init ======= */
-function initPool(){ pool = entries.map(e => ({...e, weight:1})); }
-initPool();
-
-/* ======= UI wiring ======= */
-byId("modeQuiz").onclick = ()=>switchMode("QUIZ");
-byId("modeMatch").onclick = ()=>switchMode("MATCH");
-byId("toggleDir").onclick = ()=>{ dir = dir==="FR2EN" ? "EN2FR" : "FR2EN"; updateMeta(); next(); };
-byId("reset").onclick = ()=>resetGame();
-byId("hearPrompt").onclick = ()=> {
-  const txt = byId("prompt")?.dataset?.say || "";
-  const lang = dir==="FR2EN" ? "fr-FR" : "en-US";
-  speak(txt, lang);
-};
-byId("flipTable").onclick = ()=> renderTable(true);
-byId("exportMistakes").onclick = exportMistakes;
-byId("use5050").onclick = use5050;
-byId("useShield").onclick = useShield;
-byId("useDouble").onclick = useDouble;
-
-function resetGame(){
-  stars=0; streak=0; misses=3; asked=0; progress=0; mistakes.length=0; initPool();
-  correctThisRun=0; inventory.fifty=0; inventory.shield=0; inventory.dbl=0; shield=false; doubleNext=false;
-  updateStats(); updateInventory(); switchMode("QUIZ"); setChapter(0);
+function updateHUD(){
+  $("stars").textContent = stars;
+  $("lives").textContent = lives;
+  $("pFill").style.width = Math.min(100, (asked/20)*100) + "%";
 }
 
-/* ======= Stats & HUD ======= */
-function updateStats(){
-  byId("stars").textContent = stars;
-  byId("streak").textContent = streak;
-  byId("misses").textContent = misses;
-  byId("pFill").style.width = (progress*100).toFixed(1)+"%";
-  byId("hFill").style.width = (Math.max(0, misses)/3*100)+"%";
-  byId("tFill").style.width = (timeLeft/timeMax*100)+"%";
-  byId("dragon").textContent = stars>=60 ? "🐉🔥" : stars>=30 ? "🐉✨" : "🐉";
-}
-function updateInventory(){
-  byId("cnt5050").textContent = inventory.fifty;
-  byId("cntShield").textContent = inventory.shield + (shield? " (ON)" : "");
-  byId("cntDouble").textContent = inventory.dbl + (doubleNext? " (ON)" : "");
-}
-function updateMeta(){
-  const rounds = 20;
-  byId("meta").textContent =
-    `Mode: ${mode==="QUIZ"?"Quiz":"Match"} · Direction: ${dir==="FR2EN"?"FR → EN":"EN → FR"} · Round ${asked+1}`;
-  byId("toggleDir").textContent = dir==="FR2EN" ? "🔄 FR → EN" : "🔄 EN → FR";
-  byId("motto").textContent = mode==="QUIZ"
-    ? "Answer fast for bonus ⭐. Every 6 correct opens a Boss match."
-    : "Boss battle: clear pairs to continue your quest!";
-}
+/* Build a very simple question */
+function nextQ(){
+  asked++; updateHUD();
+  current = WORDS[Math.floor(Math.random()*WORDS.length)];
+  const question = dir==="FR2EN" ? current.fr : current.en;
+  const answer = dir==="FR2EN" ? current.en : current.fr;
 
-/* ======= Chapters ======= */
-function setChapter(idx){
-  document.querySelectorAll(".node").forEach((n,i)=>{
-    n.classList.toggle("done", i<idx);
-    n.querySelector(".fill").style.width = i<idx ? "100%" : "0%";
-  });
-  const name = CHAPTERS[idx] || CHAPTERS[CHAPTERS.length-1];
-  byId("chapterName").textContent = `— Chapter ${Math.min(idx+1, CHAPTERS.length)}: ${name}`;
-}
+  $("prompt").textContent = `Translate: ${question}`;
+  $("prompt").dataset.say = question;
 
-/* ======= Quiz mode ======= */
-function weightedPick(){
-  const total = pool.reduce((s,e)=>s+e.weight,0);
-  let r = Math.random()*total;
-  for(const e of pool){ r -= e.weight; if(r<=0) return e; }
-  return pool[0];
-}
-function makeOptions(correct, k=4){
-  const opts = new Set([correct]);
-  while(opts.size<k){
-    const random = entries[rand(entries.length)];
-    const text = dir==="FR2EN" ? random.en : random.fr;
-    if(text!==correct) opts.add(text);
-  }
-  return shuffle([...opts]);
-}
-function startTimer(){
-  stopTimer(); timeLeft=timeMax; tick();
-  timer=setInterval(()=>{
-    timeLeft -= 0.05;
-    byId("tFill").style.width=(Math.max(0,timeLeft)/timeMax*100)+"%";
-    if(timeLeft<=0){ stopTimer(); timeOut(); }
-  },50);
-}
-function stopTimer(){ if(timer){ clearInterval(timer); timer=null; } }
-function timeOut(){
-  // treat as miss
-  const wrap = byId("options");
-  [...wrap.children].forEach(b=>b.disabled=true);
-  streak=0;
-  if(shield){ shield=false; inventory.shield--; updateInventory(); flash(byId("game"),"shake"); }
-  else { misses--; flash(byId("game"),"shake"); }
-  asked++; progress = Math.min(1, asked/20);
-  updateStats();
-  setTimeout(next, 500);
-}
+  // 3 choices: 1 correct, 2 random wrong
+  const wrongs = shuffle(WORDS.filter(w => (dir==="FR2EN"?w.en:w.fr) !== answer)).slice(0,2)
+                  .map(w => dir==="FR2EN" ? w.en : w.fr);
+  const choices = shuffle([answer, ...wrongs]);
 
-function renderQuiz(){
-  const item = weightedPick();
-  const q = dir==="FR2EN" ? item.fr : item.en;
-  const a = dir==="FR2EN" ? item.en : item.fr;
-
-  byId("prompt").textContent = `Translate: ${q}`;
-  byId("prompt").dataset.say = q;
-  const wrap = byId("options"); wrap.innerHTML = "";
-
-  makeOptions(a, 4).forEach(opt=>{
+  const box = $("options"); box.innerHTML = "";
+  choices.forEach(choice => {
     const btn = document.createElement("button");
-    btn.className = "option";
-    btn.innerHTML = `<span>${opt}</span> <button class="speak" aria-label="speak">🔊</button>`;
+    btn.className = "option bigbtn";
+    btn.innerHTML = `${choice} <span class="smallbtn" style="float:right">🔊</span>`;
     btn.onclick = (ev)=>{
-      if (ev.target && ev.target.closest(".speak")) {
-        speak(opt, dir==="FR2EN" ? "en-US" : "fr-FR");
-        ev.stopPropagation(); return;
-      }
-      check(opt, a, item, btn);
+      if(ev.target.textContent.includes("🔊")){ speak(choice, dir==="FR2EN"?"en-US":"fr-FR"); ev.stopPropagation(); return; }
+      handleAnswer(choice, answer, btn, box);
     };
-    wrap.appendChild(btn);
+    box.appendChild(btn);
   });
-
-  startTimer();
 }
 
-function awardPowerUp(){
-  const roll = Math.random();
-  if(roll < 0.34){ inventory.fifty++; toast("You found a 🪄 50-50!"); }
-  else if(roll < 0.67){ inventory.shield++; toast("You found a 🛡️ Shield!"); }
-  else { inventory.dbl++; toast("You found ✨ Double Stars!"); }
-  updateInventory();
-}
-function maybeAward(){
-  // chest after every 3 correct OR 30% random chance on correct
-  if(correctThisRun%3===0 || Math.random()<0.3){ awardPowerUp(); }
-}
-
-function check(choice, answer, item, btnNode){
-  stopTimer();
-  asked++; updateMeta();
-  const all = [...document.querySelectorAll(".option")];
-  all.forEach(b => b.disabled = true);
-
-  const fastBonus = timeLeft>7 ? 2 : timeLeft>3 ? 1 : 0;
+function handleAnswer(choice, answer, btn, box){
+  const buttons = [...box.children]; buttons.forEach(b=>b.disabled=true);
   if(choice === answer){
-    btnNode.classList.add("correct");
-    streak++; correctThisRun++;
-    let gain = 2 + Math.floor(streak/3) + fastBonus;
-    if(doubleNext){ gain *= 2; doubleNext=false; updateInventory(); }
-    stars += gain;
-    item.weight = Math.max(.3, item.weight*0.6);
-    progress = Math.min(1, asked/20); updateStats(); celebrate(); beep(880,150,"triangle");
-    maybeAward();
-
-    // Boss + chapter progress
-    if(correctThisRun % 6 === 0){
-      const chapterIndex = Math.min(Math.floor(correctThisRun/6)-1, CHAPTERS.length-1);
-      setChapter(chapterIndex);
-      setTimeout(()=>{ switchMode("MATCH"); }, 600);
-      return;
-    }
+    btn.classList.add("correct"); stars += 2; confetti(); ding(880);
+    setTimeout(()=>{ nextQ(); }, 600);
   }else{
-    btnNode.classList.add("wrong");
-    for(const el of all){ if(el.textContent.trim().startsWith(answer)) el.classList.add("correct"); }
-    streak = 0; correctThisRun = Math.max(0, correctThisRun-1);
-    item.weight = Math.min(5, item.weight*1.8);
-    mistakes.push({q: dir==="FR2EN"?item.fr:item.en, a:answer, when:new Date().toISOString()});
-    if(shield){ shield=false; inventory.shield--; updateInventory(); toast("🛡️ Shield blocked the miss!"); }
-    else { misses--; flash(byId("game"), "shake"); beep(220,160,"square"); }
-    progress = Math.min(1, asked/20);
-    updateStats();
+    btn.classList.add("wrong"); buttons.find(b=>b.textContent.startsWith(answer)).classList.add("correct");
+    lives--; buzz(220);
+    if(lives<=0){ setTimeout(()=>{ alert("Game over. Nice try. Starting again."); $("reset").click(); }, 350); }
+    else setTimeout(()=>{ nextQ(); }, 700);
   }
-
-  if (misses <= 0){
-    setTimeout(()=>{
-      alert("All hearts lost. Dragon is hungry… Restarting quest!");
-      resetGame();
-    }, 250);
-    return;
-  }
-  setTimeout(next, 700);
+  updateHUD();
 }
 
-/* ======= Power-ups ======= */
-function use5050(){
-  if(inventory.fifty<=0 || mode!=="QUIZ") return toast("No 50-50 yet.");
-  const opts = [...byId("options").children].filter(b=>!b.classList.contains("correct") && !b.classList.contains("wrong"));
-  const correctText = opts.find(b=>b.textContent.includes("✅")) ? "" : ""; // placeholder (not used)
-  // remove two wrong (hide)
-  const wrongs = opts.filter(b=>!b.textContent.includes("correct")); // all are undecided at this point
-  // find which is correct by comparing text to answer:
-  const answer = (dir==="FR2EN" ? currentItem().en : currentItem().fr);
-  const wrongOnly = opts.filter(b=>!b.textContent.startsWith(answer));
-  shuffle(wrongOnly).slice(0,2).forEach(b=>{ b.style.visibility="hidden"; });
-  inventory.fifty--; updateInventory();
+/* Small sounds */
+function ding(freq=700){
+  try{
+    const a=new (window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(), g=a.createGain();
+    o.type="triangle"; o.frequency.value=freq; o.connect(g); g.connect(a.destination); g.gain.value=.08; o.start();
+    setTimeout(()=>{ g.gain.exponentialRampToValueAtTime(0.00001,a.currentTime+0.05); o.stop(); a.close(); }, 150);
+  }catch{}
 }
-function useShield(){
-  if(shield){ toast("Shield already ON."); return; }
-  if(inventory.shield<=0) return toast("No shield yet.");
-  shield=true; updateInventory(); toast("🛡️ Shield ON for one mistake.");
-}
-function useDouble(){
-  if(doubleNext){ toast("Double already armed!"); return; }
-  if(inventory.dbl<=0) return toast("No Double Stars yet.");
-  doubleNext=true; inventory.dbl--; updateInventory(); toast("✨ Next correct = double stars!");
-}
-function currentItem(){ return lastItem; }
-let lastItem=null;
-
-/* ======= Match mode ======= */
-let matchDeck=[], matchOpen=[], matchSolved=0;
-function buildDeck(){
-  const sample = shuffle([...entries]).slice(0, 6);
-  matchDeck = [];
-  for(const it of sample){
-    matchDeck.push({id: it.fr+"|F", text: it.fr, key: it.en, lang:"fr", solved:false});
-    matchDeck.push({id: it.fr+"|E", text: it.en, key: it.en, lang:"en", solved:false});
-  }
-  shuffle(matchDeck);
-}
-function renderMatch(){
-  const grid = byId("grid"); grid.innerHTML="";
-  matchOpen=[]; matchSolved=0;
-  buildDeck();
-  matchDeck.forEach(card=>{
-    const d = document.createElement("button");
-    d.className="tile";
-    d.textContent = "❓";
-    d.dataset.id = card.id;
-    d.onclick = ()=>{
-      if(card.solved || matchOpen.includes(card) || matchOpen.length===2) return;
-      d.classList.add("revealed");
-      d.textContent = card.text;
-      speak(card.text, card.lang==="fr"?"fr-FR":"en-US");
-      matchOpen.push(card);
-
-      if(matchOpen.length===2){
-        const [a,b] = matchOpen;
-        const aDom = [...grid.children].find(x=>x.dataset.id===a.id);
-        const bDom = [...grid.children].find(x=>x.dataset.id===b.id);
-        if(a.key === b.key && a.id!==b.id){
-          setTimeout(()=>{
-            a.solved = b.solved = true;
-            aDom.className="tile solved"; bDom.className="tile solved";
-            aDom.textContent = a.text; bDom.textContent = b.text;
-            matchOpen.length=0; matchSolved+=2;
-            stars += 6; streak += 2; updateStats(); celebrateSmall(); beep(980,150,"triangle");
-            if(matchSolved === matchDeck.length){
-              toast("Boss defeated! Back to the quest.");
-              setTimeout(()=>{ switchMode("QUIZ"); }, 600);
-            }
-          }, 220);
-        }else{
-          streak = 0; if(shield){ shield=false; inventory.shield--; updateInventory(); } else { misses--; }
-          updateStats(); flash(byId("game"), "shake"); beep(200,160,"square");
-          setTimeout(()=>{
-            aDom.classList.remove("revealed"); bDom.classList.remove("revealed");
-            aDom.textContent="❓"; bDom.textContent="❓"; matchOpen.length=0;
-            if(misses<=0){ alert("All hearts lost. Restarting quest."); resetGame(); }
-          }, 600);
-        }
-      }
-    };
-    grid.appendChild(d);
-  });
+function buzz(freq=200){
+  try{
+    const a=new (window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(), g=a.createGain();
+    o.type="square"; o.frequency.value=freq; o.connect(g); g.connect(a.destination); g.gain.value=.06; o.start();
+    setTimeout(()=>{ g.gain.exponentialRampToValueAtTime(0.00001,a.currentTime+0.05); o.stop(); a.close(); }, 180);
+  }catch{}
 }
 
-/* ======= Mode switch & next ======= */
-function switchMode(nextMode){
-  mode = nextMode;
-  byId("quizArea").style.display = mode==="QUIZ" ? "block" : "none";
-  byId("matchArea").style.display = mode==="MATCH" ? "block" : "none";
-  updateMeta();
-  if(mode==="QUIZ") renderQuiz(); else { stopTimer(); renderMatch(); }
-}
-function next(){
-  if(mode!=="QUIZ") return;
-  renderQuiz();
-}
-
-/* ======= Study table ======= */
-let tableFlip=false;
-function renderTable(flipToggle=false){
-  if(flipToggle) tableFlip=!tableFlip;
-  const host = byId("table"); host.innerHTML="";
-  const t = document.createElement("table");
-  t.style.width="100%"; t.style.borderCollapse="separate"; t.style.borderSpacing="0 6px";
-  entries.forEach(e=>{
-    const tr = document.createElement("tr");
-    const a = document.createElement("td");
-    const b = document.createElement("td");
-    a.style.padding="8px 10px"; b.style.padding="8px 10px";
-    a.style.background="#141947"; b.style.background="#141947";
-    a.style.border="1px solid #2b356d"; b.style.border="1px solid #2b356d";
-    a.style.borderRadius="10px 0 0 10px"; b.style.borderRadius="0 10px 10px 0";
-    a.style.fontWeight="800"; b.style.fontWeight="700";
-    a.style.width="48%"; b.style.width="52%";
-    if(!tableFlip){ a.textContent=e.fr; b.textContent=e.en; }
-    else { a.textContent=e.en; b.textContent=e.fr; }
-    a.onclick=()=>speak(a.textContent, tableFlip?"en-US":"fr-FR");
-    b.onclick=()=>speak(b.textContent, tableFlip?"fr-FR":"en-US");
-    tr.appendChild(a); tr.appendChild(b); t.appendChild(tr);
-  });
-  host.appendChild(t);
-}
-renderTable();
-
-/* ======= Effects, toast & confetti ======= */
-const fx = byId("fx"); const ctx = fx.getContext("2d");
-function resizeFx(){ fx.width = innerWidth; fx.height = innerHeight; } addEventListener("resize", resizeFx); resizeFx();
-let confetti = [];
-function celebrateSmall(){ burst(16, 9); }
-function celebrate(){ burst(26, 12); }
-function burst(n=30, speed=10){
-  for(let i=0;i<n;i++){
-    confetti.push({
-      x: innerWidth*0.5 + (Math.random()*120-60),
-      y: innerHeight*0.2 + (Math.random()*30-15),
-      vx: (Math.random()-0.5)*speed,
-      vy: Math.random()*-speed - 2,
-      g: .25+Math.random()*.2,
-      s: 4+Math.random()*4,
-      a: 1,
-      hue: Math.floor(Math.random()*360)
-    });
+/* Confetti (tiny and lightweight) */
+const fx = $("fx"); const ctx = fx.getContext("2d"); function size(){ fx.width=innerWidth; fx.height=innerHeight; } addEventListener("resize", size); size();
+let particles=[];
+function confetti(){
+  for(let i=0;i<18;i++){
+    particles.push({x:innerWidth*.5, y:120, vx:(Math.random()*6-3), vy:(Math.random()*-6-2), g:.25, a:1, s:3+Math.random()*3, h:Math.floor(Math.random()*360)});
   }
 }
-function tick(){
+function loop(){
   ctx.clearRect(0,0,fx.width,fx.height);
-  confetti.forEach(p=>{
-    p.vy += p.g; p.x += p.vx; p.y += p.vy; p.a -= 0.01;
+  particles.forEach(p=>{ p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.a-=.02; });
+  particles = particles.filter(p=>p.a>0 && p.y<innerHeight+20);
+  particles.forEach(p=>{ ctx.globalAlpha=p.a; ctx.fillStyle=`hsl(${p.h} 90% 60%)`; ctx.fillRect(p.x,p.y,p.s,p.s); });
+  requestAnimationFrame(loop);
+}
+loop();
+
+/* Little practice area: tap to hear words */
+function renderStudy(){
+  const host = $("study"); host.innerHTML = "";
+  shuffle([...WORDS]).slice(8).forEach(w=>{
+    const b1=document.createElement("button"); b1.textContent=w.fr+" 🔊"; b1.onclick=()=>speak(w.fr,"fr-FR"); host.appendChild(b1);
+    const b2=document.createElement("button"); b2.textContent=w.en+" 🔊"; b2.onclick=()=>speak(w.en,"en-US"); host.appendChild(b2);
   });
-  confetti = confetti.filter(p=>p.a>0 && p.y<innerHeight+20);
-  confetti.forEach(p=>{
-    ctx.globalAlpha = Math.max(0, p.a);
-    ctx.fillStyle = `hsl(${p.hue} 90% 60%)`;
-    ctx.fillRect(p.x, p.y, p.s, p.s);
-  });
-  requestAnimationFrame(tick);
-}
-tick();
-
-function flash(el){ el.style.animation = "shake .32s linear"; setTimeout(()=>{ el.style.animation = "" }, 340); }
-const style = document.createElement("style");
-style.textContent = `
-@keyframes shake {
-  0%{ transform:translateX(0) } 20%{ transform:translateX(-6px) }
-  40%{ transform:translateX(6px) } 60%{ transform:translateX(-4px) }
-  80%{ transform:translateX(4px) } 100%{ transform:translateX(0) }
-}`; document.head.appendChild(style);
-
-function toast(msg){
-  const t=document.createElement("div");
-  t.textContent=msg;
-  t.style.position="fixed"; t.style.left="50%"; t.style.top="18px"; t.style.transform="translateX(-50%)";
-  t.style.background="#111848"; t.style.border="1px solid #3a448a"; t.style.padding="8px 12px"; t.style.borderRadius="12px";
-  t.style.fontWeight="800"; t.style.zIndex=9999;
-  document.body.appendChild(t);
-  setTimeout(()=>t.remove(),1600);
 }
 
-/* ======= Export mistakes ======= */
-function exportMistakes(){
-  if(!mistakes.length){ alert("Nice. No mistakes to export."); return; }
-  const lines = mistakes.map(m=>`${m.when}\t${m.q}\t${m.a}`);
-  const blob = new Blob(["When\tPrompt\tAnswer\n", ...lines].join("\n"), {type:"text/tab-separated-values"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = "french-mistakes.tsv"; a.click();
-  URL.revokeObjectURL(url);
-}
-
-/* ======= Start ======= */
-let _current=null;
-function saveCurrent(it){ lastItem = it; _current=it; }
-updateMeta(); updateStats(); renderQuiz(); setChapter(0);
-
-/* Monkey patch renderQuiz to remember current item */
-const _origRenderQuiz = renderQuiz;
-renderQuiz = function(){
-  const item = (function pick(){ const x=pool[Math.floor(Math.random()*pool.length)]; return x; })();
-  saveCurrent(item);
-  const q = dir==="FR2EN" ? item.fr : item.en;
-  const a = dir==="FR2EN" ? item.en : item.fr;
-
-  byId("prompt").textContent = `Translate: ${q}`;
-  byId("prompt").dataset.say = q;
-  const wrap = byId("options"); wrap.innerHTML = "";
-
-  makeOptions(a, 4).forEach(opt=>{
-    const btn = document.createElement("button");
-    btn.className = "option";
-    btn.innerHTML = `<span>${opt}</span> <button class="speak" aria-label="speak">🔊</button>`;
-    btn.onclick = (ev)=>{
-      if (ev.target && ev.target.closest(".speak")) {
-        speak(opt, dir==="FR2EN" ? "en-US" : "fr-FR"); ev.stopPropagation(); return;
-      }
-      check(opt, a, item, btn);
-    };
-    wrap.appendChild(btn);
-  });
-  startTimer();
-};
-
-/* Replace use5050 logic now that we track _current */
-function use5050(){
-  if(inventory.fifty<=0 || mode!=="QUIZ") return toast("No 50-50 yet.");
-  const answer = (dir==="FR2EN" ? _current.en : _current.fr);
-  const opts = [...byId("options").children].filter(b=>b.style.visibility!=="hidden");
-  const wrongOnly = opts.filter(b=>!b.firstChild.textContent.startsWith(answer));
-  shuffle(wrongOnly).slice(0,2).forEach(b=>{ b.style.visibility="hidden"; });
-  inventory.fifty--; updateInventory();
-}
-
-/* ======= End patch ======= */
+/* Start the game */
+renderStudy();
+updateHUD();
+nextQ();
 </script>
 </body>
 </html>
