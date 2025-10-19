@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>French Word Game — Simple & Fun</title>
+<title>James' French Game — Simple & Fun</title>
 <style>
   :root{
     --bg:#1b1f3a; --card:#222757; --ink:#ffffff; --soft:#c9d2ff; --good:#57e389; --bad:#ff6b6b; --edge:#3640a0;
@@ -83,7 +83,6 @@
     border:2px solid #4f5be0; background:linear-gradient(180deg, #2b358f, #212a6b);
     user-select:none; font-size:18px;
   }
-  /* wrong words look the same as correct ones */
   .word.bad{border-color:#4f5be0; background:linear-gradient(180deg, #2b358f, #212a6b)}
   .boom{
     position:absolute; pointer-events:none; font-size:32px; transform:scale(1); animation:pop .45s ease-out forwards;
@@ -97,13 +96,13 @@
 <canvas id="fx"></canvas>
 <div class="app card">
   <header>
-    <h1>🎯 French Word Game</h1>
+    <h1>James' French Game</h1>
     <div class="pill">Tap an answer. Collect stars. Zero stress.</div>
   </header>
 
-  <!-- TOP QUIZ (unchanged) -->
+  <!-- TOP QUIZ (unchanged except button labels) -->
   <div class="row">
-    <button id="dir" class="smallbtn">FR → EN</button>
+    <button id="dir" class="smallbtn">French → English</button>
     <button id="reset" class="smallbtn">↻ Reset</button>
   </div>
 
@@ -116,7 +115,7 @@
   <div class="options" id="options"></div>
 
   <div class="footer">
-    <div class="tiny">20 questions fill the bar. Switch FR ↔ EN anytime.</div>
+    <div class="tiny">20 questions fill the bar. Switch language direction anytime.</div>
   </div>
 
   <!-- ===== CAR CRASH PRACTICE ===== -->
@@ -127,7 +126,7 @@
       <div class="controls">
         <button id="startPractice" class="smallbtn">▶ Start</button>
         <button id="stopPractice" class="smallbtn">■ Stop</button>
-        <button id="swapPracticeDir" class="smallbtn">FR → EN</button>
+        <button id="swapPracticeDir" class="smallbtn">French → English</button>
         <button data-speed="slow"  class="modebtn">Slow</button>
         <button data-speed="med"   class="modebtn">Medium</button>
         <button data-speed="fast"  class="modebtn">Fast</button>
@@ -165,11 +164,15 @@ const WORDS = [
 const $ = id => document.getElementById(id);
 const shuffle = a => { for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; };
 
-/* ===================== TOP QUIZ (unchanged) ===================== */
-let dir = "FR2EN";
+/* ===================== TOP QUIZ (unchanged logic) ===================== */
+let dir = "FR2EN"; // internal values remain the same
 let stars = 0, lives = 3, asked = 0, current = null;
 
-$("dir").onclick = () => { dir = dir==="FR2EN" ? "EN2FR" : "FR2EN"; $("dir").textContent = dir==="FR2EN" ? "FR → EN" : "EN → FR"; nextQ(); };
+$("dir").onclick = () => {
+  dir = dir==="FR2EN" ? "EN2FR" : "FR2EN";
+  $("dir").textContent = dir==="FR2EN" ? "French → English" : "English → French";
+  nextQ();
+};
 $("reset").onclick = () => { stars=0; lives=3; asked=0; updateHUD(); nextQ(); };
 
 function updateHUD(){
@@ -253,7 +256,7 @@ loop();
 
 /* ===================== CAR CRASH PRACTICE ===================== */
 let pRunning = false;
-let pDir = "FR2EN";
+let pDir = "FR2EN"; // internal direction
 let pScore = 0, pHits = 0, pMiss = 0;
 let currentMission = null;
 let wordEl = null;
@@ -319,7 +322,7 @@ $("startPractice").onclick = startPractice;
 $("stopPractice").onclick  = stopPractice;
 $("swapPracticeDir").onclick = ()=>{
   pDir = pDir==="FR2EN" ? "EN2FR" : "FR2EN";
-  $("swapPracticeDir").textContent = pDir==="FR2EN" ? "FR → EN" : "EN → FR";
+  $("swapPracticeDir").textContent = pDir==="FR2EN" ? "French → English" : "English → French";
   if(!pRunning){ currentMission = pickMission(); setBigMission(); }
 };
 document.querySelectorAll(".modebtn").forEach(b=>{
@@ -371,7 +374,7 @@ function loopCar(){
 
     if(overlap){
       const ok = wordEl.dataset.correct === "1";
-      kaboomCenter(wordEl, ok ? "✅" : "❌");  // <-- check mark / red X
+      kaboomCenter(wordEl, ok ? "✅" : "❌");
       if(ok){
         pHits++; pScore += 5; currentMission = pickMission(); setBigMission(); confetti();
       }else{
