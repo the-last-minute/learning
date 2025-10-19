@@ -90,6 +90,49 @@
   @keyframes pop{ to { transform:scale(1.6); opacity:0; } }
   .controls{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
   .modebtn{padding:6px 10px; font-size:13px}
+
+  /* --- MEMORY MATCH --- */
+  .memory{
+    margin-top:14px; border:2px solid var(--edge); border-radius:14px; padding:12px;
+    background:linear-gradient(180deg, #202660, #181e4a);
+  }
+  .memory h3{margin:0 0 8px}
+  .mem-top{display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap}
+  .mem-stats{font-weight:900; color:var(--soft)}
+  .mem-controls{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  select{background:#121642; color:var(--soft); border:1px solid #303a94; border-radius:10px; padding:6px 10px; font-weight:700}
+  #memGrid{
+    margin-top:10px; display:grid; gap:8px; grid-template-columns:repeat(auto-fill, minmax(110px, 1fr));
+    max-height:460px; overflow:auto; padding:4px;
+    border:2px solid #303a94; border-radius:12px; background:linear-gradient(180deg, #161b4a, #121642);
+  }
+  .mem-card{
+    position:relative; height:92px; perspective:700px; border-radius:12px;
+  }
+  .mem-card button{
+    width:100%; height:100%; background:transparent; border:none; padding:0; cursor:pointer;
+  }
+  .mem-card .face{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    border-radius:12px; border:2px solid #3a46a8;
+    backface-visibility:hidden; transform-style:preserve-3d; transition:transform .35s ease;
+    text-align:center; padding:8px; font-weight:900;
+  }
+  .mem-card .front{
+    background:linear-gradient(180deg, #2b3484, #232a66);
+    color:#fff; font-size:20px;
+  }
+  .mem-card .back{
+    transform:rotateY(180deg);
+    background:linear-gradient(180deg, #24308a, #1b235f);
+    color:#fff; font-size:16px;
+  }
+  .mem-card.flipped .front{ transform:rotateY(180deg); }
+  .mem-card.flipped .back{ transform:rotateY(360deg); } /* shows back */
+  .mem-card.matched .front, .mem-card.matched .back{
+    border-color:#2f9a6e; box-shadow:0 0 0 2px rgba(47,154,110,.35) inset;
+  }
+  .mem-win{margin-top:8px; font-weight:900; color:#57e389}
 </style>
 </head>
 <body>
@@ -100,7 +143,7 @@
     <div class="pill">Tap an answer. Collect stars. Zero stress.</div>
   </header>
 
-  <!-- TOP QUIZ (unchanged except button labels) -->
+  <!-- ===== TOP QUIZ (unchanged logic, only labels) ===== -->
   <div class="row">
     <button id="dir" class="smallbtn">French → English</button>
     <button id="reset" class="smallbtn">↻ Reset</button>
@@ -118,7 +161,7 @@
     <div class="tiny">20 questions fill the bar. Switch language direction anytime.</div>
   </div>
 
-  <!-- ===== CAR CRASH PRACTICE ===== -->
+  <!-- ===== CAR CRASH PRACTICE (unchanged) ===== -->
   <section class="practice">
     <h3>🚗 Car Crash Practice</h3>
     <div class="p-top">
@@ -139,10 +182,35 @@
     </div>
     <p class="tiny" style="margin:8px 0 0">Controls: Arrow keys or A/D to steer. Big message shows what to hit.</p>
   </section>
+
+  <!-- ===== MEMORY MATCH (NEW) ===== -->
+  <section class="memory">
+    <h3>🧠 Memory Match (French ↔ English)</h3>
+    <div class="mem-top">
+      <div class="mem-stats">
+        Moves: <span id="memMoves">0</span> · Matches: <span id="memMatches">0</span>/<span id="memTotal">0</span>
+      </div>
+      <div class="mem-controls">
+        <label class="tiny">Cards:
+          <select id="memSize">
+            <option value="12">12 (easy)</option>
+            <option value="20" selected>20 (normal)</option>
+            <option value="28">28 (hard)</option>
+            <option value="all">All words (big!)</option>
+          </select>
+        </label>
+        <button id="memStart" class="smallbtn">▶ Start</button>
+        <button id="memReset" class="smallbtn">↻ Reset</button>
+      </div>
+    </div>
+    <div class="tiny" style="margin-top:6px">How to play: Flip two cards. Match a French word with its English word.</div>
+    <div id="memGrid"></div>
+    <div id="memWin" class="mem-win" style="display:none">Nice! You matched them all 🎉</div>
+  </section>
 </div>
 
 <script>
-/* Words (from your sheet) */
+/* ===== Shared word list ===== */
 const WORDS = [
   {fr:"Carrosse", en:"Carriage"}, {fr:"Citrouille", en:"Pumpkin"}, {fr:"Pantoufle", en:"Slipper"},
   {fr:"Château", en:"Castle"}, {fr:"Minuit", en:"Midnight"}, {fr:"Perdre", en:"To Lose"},
@@ -160,12 +228,12 @@ const WORDS = [
   {fr:"Voix", en:"Voice"}, {fr:"Jambes", en:"Legs"}
 ];
 
-/* Helpers */
+/* ===== Tiny helpers ===== */
 const $ = id => document.getElementById(id);
 const shuffle = a => { for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; };
 
-/* ===================== TOP QUIZ (unchanged logic) ===================== */
-let dir = "FR2EN"; // internal values remain the same
+/* ===== TOP QUIZ (unchanged logic, only labels) ===== */
+let dir = "FR2EN";
 let stars = 0, lives = 3, asked = 0, current = null;
 
 $("dir").onclick = () => {
@@ -254,15 +322,15 @@ function loop(){
 }
 loop();
 
-/* ===================== CAR CRASH PRACTICE ===================== */
+/* ===== CAR CRASH PRACTICE (unchanged logic) ===== */
 let pRunning = false;
-let pDir = "FR2EN"; // internal direction
+let pDir = "FR2EN";
 let pScore = 0, pHits = 0, pMiss = 0;
 let currentMission = null;
 let wordEl = null;
 let carX = 0;
-let carSpeed = 6;      // move speed with keys
-let fallSpeed = 1.2;   // word fall speed
+let carSpeed = 6;
+let fallSpeed = 1.2;
 let rafId = null;
 
 const arena = $("arena");
@@ -289,7 +357,7 @@ function spawnWord(){
     : shuffle(WORDS.map(w => pDir==="FR2EN"?w.en:w.fr).filter(t => t !== currentMission.ans))[0];
 
   const w = document.createElement("div");
-  w.className = "word" + (correct ? "" : " bad"); // visually identical
+  w.className = "word" + (correct ? "" : " bad");
   w.textContent = text;
   const r = arena.getBoundingClientRect();
   const x = Math.max(6, Math.random()*(r.width - 12 - 80));
@@ -355,19 +423,15 @@ window.addEventListener("keyup", e=>{
 let wordY = -40;
 function loopCar(){
   if(!pRunning){ return; }
-
-  // move car
   const r = arena.getBoundingClientRect();
   carX += (keys.right?carSpeed:0) - (keys.left?carSpeed:0);
   carX = Math.max(2, Math.min(r.width - 66, carX));
   car.style.left = carX + "px";
 
-  // move word
   if(wordEl){
     wordY = (parseFloat(wordEl.style.top) || -40) + fallSpeed;
     wordEl.style.top = wordY + "px";
 
-    // collision check
     const carRect = car.getBoundingClientRect();
     const wRect = wordEl.getBoundingClientRect();
     const overlap = !(carRect.right < wRect.left || carRect.left > wRect.right || carRect.bottom < wRect.top || carRect.top > wRect.bottom);
@@ -379,11 +443,10 @@ function loopCar(){
         pHits++; pScore += 5; currentMission = pickMission(); setBigMission(); confetti();
       }else{
         pMiss++; pScore = Math.max(0, pScore - 2);
-        // keep same mission to reinforce
       }
       updatePracticeHUD();
       spawnWord();
-    }else if(wordY > r.height){ // escaped
+    }else if(wordY > r.height){
       if(wordEl.dataset.correct === "1"){
         pMiss++; updatePracticeHUD();
         currentMission = pickMission(); setBigMission();
@@ -391,7 +454,6 @@ function loopCar(){
       spawnWord();
     }
   }
-
   rafId = requestAnimationFrame(loopCar);
 }
 function kaboomCenter(el, emoji){
@@ -406,12 +468,148 @@ function kaboomCenter(el, emoji){
   setTimeout(()=>e.remove(), 450);
 }
 
-/* Kick off quiz and prep practice */
-updateHUD(); nextQ();
-currentMission = pickMission(); setBigMission();
+/* ===== MEMORY MATCH GAME ===== */
+const memGrid = $("memGrid");
+const memMoves = $("memMoves");
+const memMatches = $("memMatches");
+const memTotal = $("memTotal");
+const memWin = $("memWin");
+const memSizeSel = $("memSize");
+const memStartBtn = $("memStart");
+const memResetBtn = $("memReset");
 
-/* Resize handling */
+let memDeck = [];
+let memFlipped = [];
+let memLocked = false;
+let memPairsTotal = 0;
+let memPairsFound = 0;
+let memMoveCount = 0;
+
+memStartBtn.onclick = () => memStart();
+memResetBtn.onclick = () => memReset(false);
+
+function memStart(){
+  const sizeVal = memSizeSel.value;
+  buildDeck(sizeVal);
+  renderDeck();
+  memReset(true);
+}
+function memReset(keepDeck){
+  memLocked = false;
+  memFlipped = [];
+  memPairsFound = 0;
+  memMoveCount = 0;
+  memMatches.textContent = "0";
+  memMoves.textContent = "0";
+  memWin.style.display = "none";
+  if(!keepDeck){
+    // rebuild with current size selection
+    buildDeck(memSizeSel.value);
+    renderDeck();
+  } else {
+    // just flip all down
+    [...memGrid.querySelectorAll(".mem-card")].forEach(c=>{
+      c.classList.remove("flipped","matched");
+    });
+  }
+}
+
+function buildDeck(sizeVal){
+  let pairCount;
+  if(sizeVal === "all"){
+    pairCount = WORDS.length; // 38
+  }else{
+    const cards = parseInt(sizeVal, 10); // total cards
+    pairCount = Math.max(2, Math.min(WORDS.length, Math.floor(cards/2)));
+  }
+
+  // choose pairCount unique indices
+  const indices = shuffle([...Array(WORDS.length).keys()]).slice(0, pairCount);
+
+  const cards = [];
+  indices.forEach((idx)=>{
+    const w = WORDS[idx];
+    cards.push({id:idx, lang:"fr", text:w.fr});
+    cards.push({id:idx, lang:"en", text:w.en});
+  });
+
+  memDeck = shuffle(cards);
+  memPairsTotal = pairCount;
+  memTotal.textContent = pairCount.toString();
+}
+
+function renderDeck(){
+  memGrid.innerHTML = "";
+  memDeck.forEach((card, i)=>{
+    const wrap = document.createElement("div");
+    wrap.className = "mem-card";
+    wrap.dataset.id = card.id;
+    wrap.dataset.lang = card.lang;
+
+    const btn = document.createElement("button");
+    const front = document.createElement("div");
+    front.className = "face front";
+    front.textContent = "❓";
+    const back = document.createElement("div");
+    back.className = "face back";
+    back.textContent = card.text;
+
+    btn.appendChild(front); btn.appendChild(back);
+    wrap.appendChild(btn);
+    memGrid.appendChild(wrap);
+
+    btn.addEventListener("click", ()=>{
+      if(memLocked || wrap.classList.contains("matched") || wrap.classList.contains("flipped")) return;
+      flipCardUp(wrap);
+      memFlipped.push(wrap);
+      if(memFlipped.length === 2){
+        memLocked = true;
+        memMoveCount++; memMoves.textContent = memMoveCount.toString();
+        checkMatch();
+      }
+    });
+  });
+}
+
+function flipCardUp(cardEl){ cardEl.classList.add("flipped"); }
+function flipCardDown(cardEl){ cardEl.classList.remove("flipped"); }
+
+function checkMatch(){
+  const [a,b] = memFlipped;
+  if(!a || !b){ memLocked=false; memFlipped=[]; return; }
+
+  const samePair = a.dataset.id === b.dataset.id;
+  const differentLang = a.dataset.lang !== b.dataset.lang;
+
+  if(samePair && differentLang){
+    a.classList.add("matched");
+    b.classList.add("matched");
+    memPairsFound++;
+    memMatches.textContent = memPairsFound.toString();
+    memFlipped = [];
+    memLocked = false;
+
+    if(memPairsFound === memPairsTotal){
+      memWin.style.display = "block";
+      confetti();
+    }
+  }else{
+    setTimeout(()=>{
+      flipCardDown(a);
+      flipCardDown(b);
+      memFlipped = [];
+      memLocked = false;
+    }, 650);
+  }
+}
+
+/* ===== Kick off the first two games as before ===== */
+updateHUD(); nextQ();
+let currentMission = pickMission(); setBigMission();
 window.addEventListener("resize", resetCar);
+
+/* Start a default memory round */
+memStart();
 </script>
 </body>
 </html>
