@@ -218,5 +218,176 @@ function buzz(freq=200){
     const a=new (window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(), g=a.createGain();
     o.type="square"; o.frequency.value=freq; o.connect(g); g.connect(a.destination); g.gain.value=.06; o.start();
     setTimeout(()=>{ g.gain.exponentialRampToValueAtTime(0.00001,a.currentTime+0.05); o.stop(); a.close(); }, 180);
-  }catch
+  }catch{}
+}
+
+/* Confetti */
+const fx = $("fx"); const ctx = fx.getContext("2d");
+function size(){ fx.width=innerWidth; fx.height=innerHeight; } addEventListener("resize", size); size();
+let parts=[];
+function confetti(){
+  for(let i=0;i<18;i++){
+    parts.push({x:innerWidth*.5, y:120, vx:(Math.random()*6-3), vy:(Math.random()*-6-2), g:.25, a:1, s:3+Math.random()*3, h:Math.floor(Math.random()*360)});
+  }
+}
+function loop(){
+  ctx.clearRect(0,0,fx.width,fx.height);
+  parts.forEach(p=>{ p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.a-=.02; });
+  parts = parts.filter(p=>p.a>0 && p.y<innerHeight+20);
+  parts.forEach(p=>{ ctx.globalAlpha=p.a; ctx.fillStyle=`hsl(${p.h} 90% 60%)`; ctx.fillRect(p.x,p.y,p.s,p.s); });
+  requestAnimationFrame(loop);
+}
+loop();
+
+/* ===================== SIMPLE ARCADE PRACTICE ===================== */
+let pRunning = false;
+let pDir = "FR2EN";
+let pScore = 0, pHits = 0, pMiss = 0;
+let currentMission = null;
+let currentTargetEl = null;
+let rafId = null;
+let px = 0;
+let speedPx = 1; // pixels per frame, controlled by slider
+
+const arena = $("arena");
+const mission = $("mission");
+const speedInput = $("speed");
+
+$("swapPracticeDir").onclick = ()=>{
+  pDir = pDir==="FR2EN" ? "EN2FR" : "FR2EN";
+  $("swapPracticeDir").textContent = pDir==="FR2EN" ? "FR → EN" : "EN → FR";
+  if(!pRunning) updateMission(); // show correct prompt when idle
+};
+
+speedInput.addEventListener("input", ()=>{
+  // map 1..4 to gentle speeds
+  const map = {1:1, 2:1.5, 3:2, 4:3};
+  speedPx = map[speedInput.value] || 1;
+});
+
+$("startPractice").onclick = startPractice;
+$("stopPractice").onclick  = stopPractice;
+
+function updatePracticeHUD(){
+  $("pScore").textContent = pScore;
+  $("pHits").textContent  = pHits;
+  $("pMiss").textContent  = pMiss;
+}
+
+function pickMission(){
+  const w = WORDS[Math.floor(Math.random()*WORDS.length)];
+  return { ask: pDir==="FR2EN" ? w.fr : w.en, ans: pDir==="FR2EN" ? w.en : w.fr };
+}
+
+function updateMission(){
+  if(!currentMission) currentMission = pickMission();
+  mission.textContent = pDir==="FR2EN"
+    ? `Shoot the English for: ${currentMission.ask}`
+    : `Shoot the French for: ${currentMission.ask}`;
+}
+
+function startPractice(){
+  if(pRunning) return;
+  pRunning = true;
+  pScore = 0; pHits = 0; pMiss = 0; updatePracticeHUD();
+  currentMission = pickMission();
+  clearArena();
+  spawnTarget();
+  loopTarget();
+}
+
+function stopPractice(){
+  pRunning = false;
+  cancelAnimationFrame(rafId);
+  rafId = null;
+  clearArena();
+  updateMission();
+}
+
+function clearArena(){
+  arena.innerHTML = '<div class="lane"></div><div class="canon">🔫</div>';
+  currentTargetEl = null;
+}
+
+function spawnTarget(){
+  // decide if this target is the correct translation or a random distractor
+  const correctText = currentMission.ans;
+  const distractorPool = shuffle(WORDS.map(w => pDir==="FR2EN" ? w.en : w.fr).filter(t => t !== correctText));
+  const isCorrect = Math.random() < 0.5; // half the time correct
+  const text = isCorrect ? correctText : distractorPool[0];
+
+  const t = document.createElement("div");
+  t.className = "target" + (isCorrect ? "" : " bad");
+  t.textContent = text;
+  t.dataset.correct = isCorrect ? "1" : "0";
+  arena.appendChild(t);
+
+  // start just off the right edge
+  px = arena.clientWidth + 20;
+  t.style.left = px + "px";
+  currentTargetEl = t;
+
+  t.addEventListener("click", ev=>{
+    if(!pRunning || !currentTargetEl) return;
+    const ok = t.dataset.correct === "1";
+    if(ok){
+      pHits++; pScore += 5; kaboom(ev.clientX, ev.clientY, "💥");
+      // new mission after a correct hit
+      currentMission = pickMission();
+      updatePracticeHUD();
+      updateMission();
+    }else{
+      pMiss++; pScore = Math.max(0, pScore - 2); kaboom(ev.clientX, ev.clientY, "💢");
+      updatePracticeHUD();
+      // keep the same mission so he waits for the real one
+    }
+    // remove and spawn the next target
+    t.remove();
+    currentTargetEl = null;
+    spawnTarget();
+  });
+
+  updateMission();
+}
+
+function loopTarget(){
+  if(!pRunning || !currentTargetEl){ if(pRunning) rafId = requestAnimationFrame(loopTarget); return; }
+  px -= speedPx; // move left
+  currentTargetEl.style.left = px + "px";
+
+  if(px < -currentTargetEl.offsetWidth - 20){
+    // escaped off the left
+    if(currentTargetEl.dataset.correct === "1"){
+      pMiss++; updatePracticeHUD();
+      // new mission if we missed the correct one
+      currentMission = pickMission();
+    }
+    currentTargetEl.remove();
+    currentTargetEl = null;
+    spawnTarget();
+  }
+  rafId = requestAnimationFrame(loopTarget);
+}
+
+function kaboom(pxAbs, pyAbs, emoji){
+  const r = arena.getBoundingClientRect();
+  const e = document.createElement("div");
+  e.className = "boom";
+  e.textContent = emoji;
+  e.style.left = (pxAbs - r.left - 14) + "px";
+  e.style.top  = (pyAbs - r.top  - 14) + "px";
+  arena.appendChild(e);
+  setTimeout(()=>e.remove(), 400);
+}
+
+/* Start the quiz immediately */
+updateHUD();
+nextQ();
+
+/* Initialize practice UI */
+updateMission();
+speedInput.dispatchEvent(new Event("input")); // set initial speed
+</script>
+</body>
+</html>
 
