@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fairy Tale Knight Quest - French Word Adventure</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f0f8ff; text-align: center; padding: 20px; }
+        h1 { color: #4b0082; }
+        #question { font-size: 24px; margin: 20px; }
+        .button { background-color: #32cd32; color: white; padding: 10px 20px; margin: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 18px; }
+        .button:hover { background-color: #228b22; }
+        #feedback { font-size: 20px; margin: 20px; color: #ff4500; }
+        #score { font-size: 18px; color: #00008b; }
+        #canvas { position: relative; margin: auto; display: block; border: 1px solid #000; }
+    </style>
+</head>
+<body>
+    <h1>🛡️ Fairy Tale Knight Quest 🏰</h1>
+    <p>Brave knight, master French words from fairy tales! Nail 10 questions, crush mini-games between levels for bonus points, and claim victory. Each mini-game is a battle—win for extra glory!</p>
+    <div id="question"></div>
+    <div id="options"></div>
+    <div id="feedback"></div>
+    <div id="score">Level: 0 / 10 | Bonus Points: 0</div>
+    <button id="restart" class="button" style="display: none;">Restart Quest!</button>
+    <canvas id="canvas" width="800" height="600"></canvas>
+
+    <script>
+        const pairs = [
+            ["Princess", "Princesse"], ["Needle", "Aiguille"], ["To Touch", "Toucher"], ["Brave", "Brave"],
+            ["Silence", "Silencieux"], ["To Wake up", "Réveiller"], ["Thick", "Épaisse"], ["Asleep", "Endormi"],
+            ["Strong", "Fort"], ["Happy", "Heureux"], ["Sea", "Mer"], ["Tail", "Queue"],
+            ["King", "Roi"], ["Light Blue", "Bleue Claire"], ["Mermaid", "Sirène"], ["Boat", "Bateau"],
+            ["To discover", "Découvrir"], ["Ocean", "Océan"], ["Voice", "Voix"], ["Legs", "Jambes"],
+            ["Carriage", "Carrosse"], ["Pumpkin", "Citrouille"], ["Slipper", "Pantoufle"], ["Castle", "Château"],
+            ["Midnight", "Minuit"], ["To Lose", "Perdre"], ["Evil", "Vilaines"], ["A Ball Dance", "Bal"],
+            ["Wand", "Baguette Magique"], ["Always", "Toujours"], ["Basket", "Panier"], ["To meet", "Rencontrer"],
+            ["Smile", "Sourire"], ["Old", "Vieille"], ["Suddenly", "Tout à coup"], ["Hunter", "Chasseur"],
+            ["To bring", "Apporter"], ["Sweet", "Douce"], ["To save", "Sauver"], ["Meal", "Repas"]
+        ];
+
+        let currentLevel = 0;
+        let bonusPoints = 0;
+        let questions = [];
+        const totalQuestions = 10;
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 800;
+        canvas.height = 600;
+
+        let mouseX = 0, mouseY = 0;
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
+        });
+
+        let miniClickHandler = null;
+        function setMiniClickHandler(handler) {
+            if (miniClickHandler) canvas.removeEventListener('click', miniClickHandler);
+            miniClickHandler = handler;
+            if (handler) canvas.addEventListener('click', miniClickHandler);
+        }
+
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        function playSound(frequency, duration) {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+            oscillator.connect(audioCtx.destination);
+            oscillator.start();
+            setTimeout(() => oscillator.stop(), duration);
+        }
+
+        function startGame() {
+            questions = shuffle([...pairs]).slice(0, totalQuestions);
+            currentLevel = 0;
+            bonusPoints = 0;
+            document.getElementById('restart').style.display = 'none';
+            document.getElementById('feedback').innerText = '';
+            setMiniClickHandler(null);
+            updateScore();
+            nextQuestion();
+        }
+
+        function updateScore() {
+            document.getElementById('score').innerText = `Level: ${currentLevel} / 10 | Bonus Points: ${bonusPoints}`;
+        }
+
+        function nextQuestion() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (currentLevel >= totalQuestions) {
+                document.getElementById('question').innerText = `🏆 Quest Complete! Total Bonus: ${bonusPoints} 🎉`;
+                document.getElementById('options').innerHTML = '';
+                document.getElementById('restart').style.display = 'block';
+                return;
+            }
+            const [english, french] = questions[currentLevel];
+            document.getElementById('question').innerText = `Translate to French: "${english}"?`;
+            const options = [french];
+            while (options.length < 4) {
+                const randomFrench = pairs[Math.floor(Math.random() * pairs.length)][1];
+                if (!options.includes(randomFrench)) options.push(randomFrench);
+            }
+            const shuffledOptions = shuffle(options);
+            const optionsDiv = document.getElementById('options');
+            optionsDiv.innerHTML = '';
+            shuffledOptions.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'button';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(opt, french);
+                optionsDiv.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selected, correct) {
+            if (selected === correct) {
+                document.getElementById('feedback').innerText = `Epic win! Charge into the mini-battle! ⚔️`;
+                playSound(440, 200); // Success beep
+                currentLevel++;
+                updateScore();
+                setTimeout(() => playMiniGame(currentLevel - 1), 1000); // Index from 0
+            } else {
+                document.getElementById('feedback').innerText = 'Missed! Swing again, knight! 🛡️';
+                playSound(220, 200); // Fail beep
+            }
+        }
+
+        const miniGames = [
+            // 1. Stop the Dragon Breath (Timing) - Bonus if close to target
+            {
+                name: "Stop the Dragon Breath",
+                init: function() {
+                    this.state = { startTime: Date.now(), stopped: false, target: 5, elapsed: 0, color: 'red' };
+                },
+                update: function() {
+                    const state = this.state;
+                    state.elapsed = (Date.now() - state.startTime) / 1000;
+                    if (state.elapsed > state.target && !state.stopped) {
+                        this.endMini("Dragon scorched you! No bonus.", 0);
+                    }
+                },
+                draw: function() {
+                    const state = this.state;
+                    ctx.fillStyle = '#8B4513'; // Brown ground
+                    ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+                    ctx.fillStyle = state.color;
+                    ctx.fillRect(0, canvas.height / 2 - 25, (state.elapsed / state.target) * canvas.width, 50);
+                    ctx.font = '20px Arial';
+                    ctx.fillStyle = 'black';
+                    ctx.fillText('Click to stop the breath!', canvas.width / 2 - 150, 50);
+                },
+                onClick: function() {
+                    const state = this.state;
+                    if (!state.stopped) {
+                        state.stopped = true;
+                        const score = Math.abs(state.target - state.elapsed);
+                        const bonus = score < 0.5 ? 2 : score < 1 ? 1 : 0;
+                        this.endMini(`Halted at ${state.elapsed.toFixed(2)}s! Bonus: ${bonus}`, bonus);
+                    }
+                },
+                endMini: function(msg, bonus) {
+                    document.getElementById('feedback').innerText = msg;
+                    bonusPoints += bonus;
+                    updateScore();
+                    playSound(bonus > 0 ? 440 : 220, 200);
+                    clearInterval(this.interval);
+                    setMiniClickHandler(null);
+                    setTimeout(nextQuestion, 2000);
+                }
+            },
+            // 2. Catch the Falling Sword (Falling) - Bonus if caught early
+            {
+                name: "Catch the Falling Sword",
+                init: function() {
+                    this.state = { ballX: Math.random() * (canvas.width - 40) + 20, ballY: 0, speed: 4, radius: 20, caught: false, color: 'silver' };
+                },
+                update: function() {
+                    const state = this.state;
+                    state.ballY += state.speed;
+                    if (state.ballY > canvas.height + state.radius && !state.caught) {
+                        this.endMini("Sword shattered! No bonus.", 0);
+                    }
+                },
+                draw: function() {
+                    const state = this.state;
+                    ctx.fillStyle = '#87CEEB'; // Sky background
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = state.color;
+                    ctx.beginPath();
+                    ctx.arc(state.ballX, state.ballY, state.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.font = '20px Arial';
+                    ctx.fillStyle = 'black';
+                    ctx.fillText('Click to catch!', canvas.width / 2 - 100, 50);
+                },
+                onClick: function(x, y) {
+                    const state = this.state;
+                    if (!state.caught) {
+                        const dist = Math.sqrt((x - state.ballX) ** 2 + (y - state.ballY) ** 2);
+                        if (dist < state.radius) {
+                            state.caught = true;
+                            const bonus = state.ballY < canvas.height / 2 ? 2 : 1;
+                            this.endMini(`Snagged the sword! Bonus: ${bonus}`, bonus);
+                        }
+                    }
+                },
+                endMini: function(msg, bonus) {
+                    document.getElementById('feedback').innerText = msg;
+                    bonusPoints += bonus;
+                    updateScore();
+                    playSound(bonus > 0 ? 440 : 220, 200);
+                    clearInterval(this.interval);
+                    setMiniClickHandler(null);
+                    setTimeout(nextQuestion, 2000);
+                }
+            },
+            // Similar enhancements for the other 8 mini-games...
+            // 3. Whack the Goblin
+            {
+                name: "Whack the Goblin",
+                init: function() {
+                    this.state = { targetX: Math.random() * (canvas.width - 60) + 30, targetY: Math.random() * (canvas.height - 60) + 30, timeLeft: 3, radius: 30, whacked: false, color: 'green' };
+                },
+                update: function() {
+                    const state = this.state;
+                    state.timeLeft -= 0.02;
+                    if (state.timeLeft <= 0 && !state.whacked) {
+                        this.endMini("Goblin fled! No bonus.", 0);
+                    }
+                },
+                draw: function() {
+                    const state = this.state;
+                    ctx.fillStyle = '#228B22'; // Forest bg
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = state.color;
+                    ctx.beginPath();
+                    ctx.arc(state.targetX, state.targetY, state.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = 'black';
+                    ctx.font = '16px Arial';
+                    ctx.fillText(`Time: ${state.timeLeft.toFixed(1)}s`, state.targetX - 30, state.targetY - state.radius - 10);
+                    ctx.fillText('Whack it!', canvas.width / 2 - 50, 50);
+                },
+                onClick: function(x, y) {
+                    const state = this.state;
+                    if (!state.whacked) {
+                        const dist = Math.sqrt((x - state.targetX) ** 2 + (y - state.targetY) ** 2);
+                        if (dist < state.radius) {
+                            state.whacked = true;
+                            const bonus = state.timeLeft > 1.5 ? 2 : 1;
+                            this.endMini(`Smashed the goblin! Bonus: ${bonus}`, bonus);
+                        }
+                    }
+                },
+                endMini: function(msg, bonus) {
+                    document.getElementById('feedback').innerText = msg;
+                    bonusPoints += bonus;
+                    updateScore();
+                    playSound(bonus > 0 ? 440 : 220, 200);
+                    clearInterval(this.interval);
+                    setMiniClickHandler(null);
+                    setTimeout(nextQuestion, 2000);
+                }
+            },
+            // 4. Quick Sword Swings
+            {
+                name: "Quick Sword Swings",
+                init: function() {
+                    this.state = { clicks: 0, timeLeft: 5, color: 'blue' };
+                },
+                update: function() {
+                    const state = this.state;
+                    state.timeLeft -= 0.02;
+                    if (state.timeLeft <= 0) {
+                        const bonus = state.clicks > 20 ? 2 : state.clicks > 10 ? 1 : 0;
+                        this.endMini(`Swung ${state.clicks} times! Bonus: ${bonus}`, bonus);
+                    }
+                },
+                draw: function() {
+                    const state = this.state;
+                    ctx.fillStyle = '#FFD700'; // Gold arena
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = state.color;
+                    ctx.font = '30px Arial';
+                    ctx.fillText(`Slash fast! Time: ${state.timeLeft.toFixed(1)}s`, canvas.width / 2 - 150, canvas.height / 2);
+                    ctx.fillText(`Swings: ${state.clicks}`, canvas.width / 2 - 100, canvas.height / 2 + 40);
+                },
+                onClick: function() {
+                    this.state.clicks++;
+                    playSound(523, 100); // Quick beep per click
+                },
+                endMini: function(msg, bonus) {
+                    document.getElementById('feedback').innerText = msg;
+                    bonusPoints += bonus;
+                    updateScore();
+                    playSound(bonus > 0 ? 440 : 220, 200);
+                    clearInterval(this.interval);
+                    setMiniClickHandler(null);
+                    setTimeout(nextQuestion, 2000);
+                }
+            },
+            // 5. Time the Shield Block
+            {
+                name: "Time the Shield Block",
+                init: function() {
+                    this.state = { startTime: Date.now(), stopped: false, target: 4, elapsed: 0, color: 'gray' };
+                },
+                update: function() {
+                    const state = this.state;
+                    state.elapsed = (Date.now() - state.startTime) / 1000;
+                    if (state.elapsed > state.target && !state.stopped) {
+                        this.endMini("Attack hit! No bonus.", 0);
+                    }
+                },
+                draw: function() {
+                    const state = this.state;
+                    ctx.fillStyle = '#A9A9A9'; // Stone wall bg
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = state.color;
+                    ctx.fillRect(0, canvas.height / 2 - 25, (state.elapsed / state.target) * canvas.width, 50);
+                    ctx.font = '20px Arial';
+                    ctx.fillStyle = 'black';
+                    ctx.fillText('Click to block!', canvas.width / 2 - 100, 50);
+                },
+                onClick: function() {
+                    const state = this.state;
+                    if (!state.stopped) {
+                        state.stopped = true;
+                        const score = Math.abs(state.target - state.elapsed);
+                        const bonus = score < 0.5 ? 2 : score < 1 ? 1 : 0;
+                        this.endMini(`Blocked at ${state.elapsed.toFixed(2)}s! Bonus: ${bonus}`, bonus);
+                    }
+                },
+                endMini: function(msg, bonus) {
+                    document.getElementById('feedback').innerText = msg;
+                    bonusPoints += bonus;
+                    updateScore();
+                    playSound(bonus > 0 ? 440 : 220, 200);
+                    clearInterval(this.interval);
+                    setMiniClickHandler(null);
+                    setTimeout(nextQuestion, 2000);
+                }
+            },
+            // 6. Catch the Magic Orb
+            {
+                name: "Catch the Magic Orb",
+                init: function() {
+                    this.state = { ballX: Math.random() * (canvas.width - 30) + 15, ballY: 0, speed: 6, radius: 15, caught: false, color: 'purple' };
+                },
+                update: function() {
+                    const state = this.state;
+                    state.ballY += state.speed;
+                    if (state.ballY > canvas.height + state.radius && !state.caught) {
+                        this.endMini("Orb vanished! No bonus.", 0);
+                    }
+                },
+                draw: function() {
+                    const state = this.state;
+                    ctx.fillStyle = '#4B0082'; // Mystic bg
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = state.color;
+                    ctx.beginPath();
+                    ctx.arc(state.ballX, state.ballY, state.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.font = '20px Arial';
+                    ctx.fillStyle = 'white';
+                    ctx.fillText('Grab the orb!', canvas.width / 2 - 100, 50);
+                },
+                onClick: function(x, y) {
+                    const state = this.state;
+                    if (!state.caught) {
+                        const dist = Math.sqrt((x - state.ballX) ** 2 + (y - state.ballY) ** 2);
+                        if (dist < state.radius) {
+                            state.caught = true;
+                            const bonus = state.ballY < canvas.height / 2 ? 2 : 1;
+                            this.endMini(`Seized the orb! Bonus: ${bonus}`, bonus);
+                        }
+                    }
+                },
+                endMini: function(msg, bonus) {
+                    document.getElementById('feedback').innerText = msg;
+                    bonusPoints += bonus;
+                    updateScore();
+                    playSound(bonus > 0 ? 440 : 220, 200);
+                    clearInterval(this.interval);
+                    setMiniClickHandler(null);
+                    setTimeout(nextQuestion, 2000);
+                }
+            },
+            // 7. Whack the Orc
+            {
+                name: "Whack the Orc",
+                init: function() {
+                    this.state = { targetX: Math.random() * (canvas.width - 70) + 35, targetY: Math.random() * (canvas.height - 70) + 35, timeLeft: 2.5, radius: 35, whacked: false, color: 'brown' };
+                },
+                update: function() {
+                    const state = this.state;
+                    state.timeLeft -= 0.02;
+                    if (state.timeLeft <= 0 && !state.whacked) {
+                        this.endMini("Orc escaped! No bonus.", 0);
+                    }
+                },
+                draw: function() {
+                    const state = this.state;
+                    ctx.fillStyle = '#556B2F'; // Dark forest bg
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = state.color;
+                    ctx.beginPath();
+                    ctx.arc(state.targetX, state.targetY, state.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = 'white';
+                    ctx.font = '16px Arial';
+                    ctx.fillText(`Time: ${state.timeLeft.toFixed(1)}s`, state.targetX - 30, state.targetY - state.radius - 10);
+                    ctx.fillText('Bash the orc!', canvas.width / 2 - 70, 50);
+                },
+                onClick: function(x, y) {
+                    const state = this.state;
+                    if (!state.whacked) {
+                        const dist = Math.sqrt((x - state.targetX) ** 2 + (y - state.targetY) ** 2);
+                        if (dist < state.radius) {
+                            state.whacked = true;
+                            const bonus = state.timeLeft > 1.25 ? 2 : 1;
+                            this.endMini(`Crushed the orc! Bonus: ${bonus}`, bonus);
+                        }
+                    }
+                },
+                endMini: function(msg, bonus) {
+                    document.getElementById('feedback').innerText = msg;
+                    bonusPoints += bonus;
+                    updateScore();
+                    playSound(bonus > 0 ? 440 : 220, 200);
+                    clearInterval(this.interval);
+                    setMiniClickHandler(null);
+                    setTimeout(nextQuestion, 2000);
+                }
+            },
+            // 8. Quick Arrow Shots
+            {
+                name: "Quick Arrow Shots",
+                init: function() {
+                    this.state = { clicks: 0, timeLeft: 4, color: 'green' };
+                },
+                update: function() {
+                    const state = this.state;
+                    state.timeLeft -= 0.02;
+                    if (state.timeLeft <= 0) {
+                        const bonus = state.clicks > 15 ? 2 : state.clicks > 8 ? 1 : 0;
+                        this.endMini(`Shot ${state.clicks} arrows! Bonus: ${bonus}`, bonus);
+                    }
+                },
+                draw: function() {
+                    const state = this.state;
+                    ctx.fillStyle = '#90EE90'; // Light green field
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = state.color;
+                    ctx.font = '30px Arial';
+                    ctx.fillText(`Fire fast! Time: ${state.timeLeft.toFixed(1)}s`, canvas.width / 2 - 150, canvas.height / 2);
+                    ctx.fillText(`Shots: ${state.clicks}`, canvas.width / 2 - 100, canvas.height / 2 + 40);
+                },
+                onClick: function() {
+                    this.state.clicks++;
+                    playSound(659, 100); // Higher beep for shots
+                },
+                endMini: function(msg, bonus) {
+                    document.getElementById('feedback').innerText = msg;
+                    bonusPoints += bonus;
+                    updateScore();
+                    playSound(bonus > 0 ? 440 : 220, 200);
+                    clearInterval(this.interval);
+                    setMiniClickHandler(null);
+                    setTimeout(nextQuestion, 2000);
+                }
+            },
+            // 9. Time the Jump over Pit
+            {
+                name: "Time the Jump over Pit",
+                init: function() {
+                    this.state = { startTime: Date.now(), stopped: false, target: 6, elapsed: 0, color: 'orange' };
+                },
+                update: function() {
+                    const state = this.state;
+                    state.elapsed = (Date.now() - state.startTime) / 1000;
+                    if (state.elapsed > state.target && !state.stopped) {
+                        this.endMini("Plunged into the pit! No bonus.", 0);
+                    }
+                },
+                draw: function() {
+                    const state = this.state;
+                    ctx.fillStyle = '#FF8C00'; // Lava pit bg
+                    ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+                    ctx.fillStyle = state.color;
+                    ctx.fillRect(0, canvas.height / 2 - 25, (state.elapsed / state.target) * canvas.width, 50);
+                    ctx.font = '20px Arial';
+                    ctx.fillStyle = 'black';
+                    ctx.fillText('Click to leap!', canvas.width / 2 - 100, 50);
+                },
+                onClick: function() {
+                    const state = this.state;
+                    if (!state.stopped) {
+                        state.stopped = true;
+                        const score = Math.abs(state.target - state.elapsed);
+                        const bonus = score < 0.5 ? 2 : score < 1 ? 1 : 0;
+                        this.endMini(`Leaped at ${state.elapsed.toFixed(2)}s! Bonus: ${bonus}`, bonus);
+                    }
+                },
+                endMini: function(msg, bonus) {
+                    document.getElementById('feedback').innerText = msg;
+                    bonusPoints += bonus;
+                    updateScore();
+                    playSound(bonus > 0 ? 440 : 220, 200);
+                    clearInterval(this.interval);
+                    setMiniClickHandler(null);
+                    setTimeout(nextQuestion, 2000);
+                }
+            },
+            // 10. Catch the Treasure Chest
+            {
+                name: "Catch the Treasure Chest",
+                init: function() {
+                    this.state = { ballX: Math.random() * (canvas.width - 50) + 25, ballY: 0, speed: 5, radius: 25, caught: false, color: 'gold' };
+                },
+                update: function() {
+                    const state = this.state;
+                    state.ballY += state.speed;
+                    if (state.ballY > canvas.height + state.radius && !state.caught) {
+                        this.endMini("Treasure lost! No bonus.", 0);
+                    }
+                },
+                draw: function() {
+                    const state = this.state;
+                    ctx.fillStyle = '#B8860B'; // Golden cave bg
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = state.color;
+                    ctx.beginPath();
+                    ctx.arc(state.ballX, state.ballY, state.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.font = '20px Arial';
+                    ctx.fillStyle = 'black';
+                    ctx.fillText('Snatch the chest!', canvas.width / 2 - 120, 50);
+                },
+                onClick: function(x, y) {
+                    const state = this.state;
+                    if (!state.caught) {
+                        const dist = Math.sqrt((x - state.ballX) ** 2 + (y - state.ballY) ** 2);
+                        if (dist < state.radius) {
+                            state.caught = true;
+                            const bonus = state.ballY < canvas.height / 2 ? 2 : 1;
+                            this.endMini(`Claimed the treasure! Bonus: ${bonus}`, bonus);
+                        }
+                    }
+                },
+                endMini: function(msg, bonus) {
+                    document.getElementById('feedback').innerText = msg;
+                    bonusPoints += bonus;
+                    updateScore();
+                    playSound(bonus > 0 ? 440 : 220, 200);
+                    clearInterval(this.interval);
+                    setMiniClickHandler(null);
+                    setTimeout(nextQuestion, 2000);
+                }
+            }
+        ];
+
+        function playMiniGame(index) {
+            const mini = miniGames[index % miniGames.length];
+            document.getElementById('question').innerText = `Battle ${index + 1}: ${mini.name}`;
+            document.getElementById('options').innerHTML = '';
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            mini.init();
+            mini.interval = setInterval(() => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear each frame for animation
+                mini.update();
+                mini.draw();
+            }, 20);
+            setMiniClickHandler((e) => {
+                mini.onClick(mouseX, mouseY);
+            });
+        }
+
+        document.getElementById('restart').onclick = startGame;
+        startGame();
+    </script>
+</body>
+</html>
