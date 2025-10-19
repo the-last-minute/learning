@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -48,10 +49,42 @@
   .fill{height:100%; width:0%; background:linear-gradient(90deg, #62f3ff, #5be6a0)}
   .stats{font-weight:900; color:var(--soft)}
   .footer{display:flex; gap:8px; align-items:center; justify-content:space-between; margin-top:10px; color:var(--soft)}
-  .study{margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:6px}
-  .study button{padding:10px; font-size:16px}
   .tiny{font-size:12px}
   #fx{position:fixed; inset:0; pointer-events:none}
+
+  /* --- Arcade Practice (bottom) --- */
+  .practice{
+    margin-top:14px;
+    border:2px solid var(--edge);
+    border-radius:14px;
+    padding:10px;
+    background:linear-gradient(180deg, #242b6a, #1b2254);
+  }
+  .practice h3{margin:0 0 6px}
+  .p-top{display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap}
+  .p-info{font-weight:900; color:var(--soft)}
+  #arena{
+    position:relative; margin-top:8px; height:260px; overflow:hidden;
+    border:2px solid #3a46a8; border-radius:12px;
+    background:
+      radial-gradient(400px 160px at 80% -20%, rgba(255,255,255,.12) 0%, transparent 60%),
+      linear-gradient(180deg, #10153a, #121740 60%);
+  }
+  .target{
+    position:absolute; top:0; left:-120px; /* start offscreen left, we animate right-to-left */
+    padding:8px 12px; border-radius:999px; font-weight:900;
+    border:2px solid #4f5be0; background:linear-gradient(180deg, #2b358f, #212a6b);
+    white-space:nowrap; user-select:none;
+  }
+  .target.bad{border-color:#b34a4a; background:linear-gradient(180deg, #6a2b37, #4c2029)}
+  .boom{
+    position:absolute; pointer-events:none; font-size:28px; transform:scale(1); animation:pop .4s ease-out forwards;
+  }
+  @keyframes pop{ to { transform:scale(1.6); opacity:0; } }
+  .canon{
+    position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
+    font-size:28px;
+  }
 </style>
 </head>
 <body>
@@ -79,8 +112,25 @@
     <div class="tiny">20 questions fill the bar. Switch FR ↔ EN anytime.</div>
   </div>
 
-  <h3 style="margin:14px 0 6px">📚 Quick Practice</h3>
-  <div class="study" id="study"></div>
+  <!-- ===== Arcade Practice (Action-y, simple) ===== -->
+  <section class="practice">
+    <h3>🎮 Arcade Practice (boom boom edition)</h3>
+    <div class="p-top">
+      <div class="p-info">Mission: <span id="mission">Click the correct word!</span></div>
+      <div class="p-info">Score: <span id="pScore">0</span> · Hits: <span id="pHits">0</span> · Misses: <span id="pMiss">0</span></div>
+      <div class="row">
+        <button id="startPractice" class="smallbtn">▶ Start</button>
+        <button id="stopPractice" class="smallbtn">■ Stop</button>
+        <button id="swapPracticeDir" class="smallbtn">FR → EN</button>
+        <label class="tiny" style="display:inline-flex; align-items:center; gap:6px">
+          Speed <input id="speed" type="range" min="1" max="4" step="1" value="2" />
+        </label>
+      </div>
+    </div>
+    <div id="arena">
+      <div class="canon">🔫</div>
+    </div>
+  </section>
 </div>
 
 <script>
@@ -106,11 +156,10 @@ const WORDS = [
 const $ = id => document.getElementById(id);
 const shuffle = a => { for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; };
 
-/* State */
+/* ===================== TOP QUIZ (unchanged) ===================== */
 let dir = "FR2EN";
 let stars = 0, lives = 3, asked = 0, current = null;
 
-/* Controls */
 $("dir").onclick = () => { dir = dir==="FR2EN" ? "EN2FR" : "FR2EN"; $("dir").textContent = dir==="FR2EN" ? "FR → EN" : "EN → FR"; nextQ(); };
 $("reset").onclick = () => { stars=0; lives=3; asked=0; updateHUD(); nextQ(); };
 
@@ -120,7 +169,6 @@ function updateHUD(){
   $("pFill").style.width = Math.min(100, (asked/20)*100) + "%";
 }
 
-/* Question */
 function nextQ(){
   asked++; updateHUD();
   current = WORDS[Math.floor(Math.random()*WORDS.length)];
@@ -160,7 +208,7 @@ function handleAnswer(choice, answer, btn, box){
   updateHUD();
 }
 
-/* Tiny sounds */
+/* Tiny sounds (non-intrusive) */
 function ding(freq=700){
   try{
     const a=new (window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(), g=a.createGain();
@@ -194,20 +242,130 @@ function loop(){
 }
 loop();
 
-/* Practice area */
-function renderStudy(){
-  const host = $("study"); host.innerHTML = "";
-  shuffle([...WORDS]).slice(8).forEach(w=>{
-    const b1=document.createElement("button"); b1.textContent=w.fr; host.appendChild(b1);
-    const b2=document.createElement("button"); b2.textContent=w.en; host.appendChild(b2);
+/* ===================== BOTTOM ARCADE PRACTICE ===================== */
+let pRunning = false;
+let pDir = "FR2EN";
+let pScore = 0, pHits = 0, pMiss = 0;
+let waveTimer = null;
+const arena = $("arena");
+const mission = $("mission");
+const speedInput = $("speed");
+
+$("swapPracticeDir").onclick = ()=>{
+  pDir = pDir==="FR2EN" ? "EN2FR" : "FR2EN";
+  $("swapPracticeDir").textContent = pDir==="FR2EN" ? "FR → EN" : "EN → FR";
+  updateMission();
+};
+$("startPractice").onclick = startPractice;
+$("stopPractice").onclick  = stopPractice;
+
+function updateMission(){
+  const sample = WORDS[Math.floor(Math.random()*WORDS.length)];
+  mission.textContent = pDir==="FR2EN" ? `Blast the English for: ${sample.fr}` : `Blast the French for: ${sample.en}`;
+  // store the active answer on arena element
+  arena.dataset.answer = pDir==="FR2EN" ? sample.en : sample.fr;
+}
+
+function startPractice(){
+  if(pRunning) return;
+  pRunning = true;
+  pScore = 0; pHits = 0; pMiss = 0; updatePracticeHUD();
+  arena.innerHTML = '<div class="canon">🔫</div>';
+  updateMission();
+  spawnWave();
+  waveTimer = setInterval(spawnWave, 1600 / Number(speedInput.value));
+}
+
+function stopPractice(){
+  pRunning = false;
+  clearInterval(waveTimer); waveTimer = null;
+  [...arena.querySelectorAll(".target")].forEach(t=>t.remove());
+}
+
+function updatePracticeHUD(){
+  $("pScore").textContent = pScore;
+  $("pHits").textContent  = pHits;
+  $("pMiss").textContent  = pMiss;
+}
+
+/* Spawn a wave of 5 targets: 1 correct + 4 wrong, flying right-to-left */
+function spawnWave(){
+  if(!pRunning) return;
+
+  const correctText = arena.dataset.answer;
+  const wrongPool = shuffle(WORDS)
+    .map(w => pDir==="FR2EN" ? w.en : w.fr)
+    .filter(txt => txt !== correctText);
+  const targetsText = shuffle([correctText, ...wrongPool.slice(0,4)]);
+
+  const rows = [20,60,100,140,180,220];
+  const usedRows = shuffle(rows).slice(0, targetsText.length);
+
+  targetsText.forEach((txt, i)=>{
+    const t = document.createElement("div");
+    t.className = "target" + (txt===correctText ? "" : " bad");
+    t.textContent = txt;
+    const y = usedRows[i];
+    const startX = arena.clientWidth + 40;
+    t.style.top = y + "px";
+    t.style.left = startX + "px";
+    arena.appendChild(t);
+
+    // click handler: boom if correct, penalty if wrong
+    t.addEventListener("click", (ev)=>{
+      if(!pRunning) return;
+      if(txt === correctText){
+        pHits++; pScore += 5;
+        kaboom(ev.clientX, ev.clientY, "💥");
+        t.remove();
+        // set next mission immediately after a hit
+        updateMission();
+      }else{
+        pMiss++; pScore = Math.max(0, pScore - 2);
+        kaboom(ev.clientX, ev.clientY, "💢");
+        t.remove();
+      }
+      updatePracticeHUD();
+    });
+
+    // simple animation loop
+    const speed = 1.2 + Number(speedInput.value)*0.6; // faster with higher slider
+    let x = startX;
+    function fly(){
+      if(!document.body.contains(t)) return; // removed
+      x -= speed;
+      t.style.left = x + "px";
+      if(x < -t.offsetWidth - 20){
+        // if a correct one escaped, count as miss and new mission
+        if(txt === correctText && pRunning){
+          pMiss++; updatePracticeHUD(); updateMission();
+        }
+        t.remove();
+        return;
+      }
+      if(pRunning) requestAnimationFrame(fly);
+    }
+    requestAnimationFrame(fly);
   });
 }
 
-/* Start */
-renderStudy();
+/* Comic-style explosion */
+function kaboom(px, py, emoji){
+  const r = arena.getBoundingClientRect();
+  const e = document.createElement("div");
+  e.className = "boom";
+  e.textContent = emoji;
+  e.style.left = (px - r.left - 14) + "px";
+  e.style.top  = (py - r.top  - 14) + "px";
+  arena.appendChild(e);
+  setTimeout(()=>e.remove(), 400);
+}
+
+/* Start the quiz immediately */
 updateHUD();
 nextQ();
 </script>
 </body>
 </html>
+```
 
