@@ -143,7 +143,7 @@
     <div class="pill">Tap an answer. Collect stars. Zero stress.</div>
   </header>
 
-  <!-- ===== TOP QUIZ (unchanged logic, only labels) ===== -->
+  <!-- ===== TOP QUIZ ===== -->
   <div class="row">
     <button id="dir" class="smallbtn">French → English</button>
     <button id="reset" class="smallbtn">↻ Reset</button>
@@ -161,7 +161,7 @@
     <div class="tiny">20 questions fill the bar. Switch language direction anytime.</div>
   </div>
 
-  <!-- ===== CAR CRASH PRACTICE (unchanged) ===== -->
+  <!-- ===== CAR CRASH PRACTICE ===== -->
   <section class="practice">
     <h3>🚗 Car Crash Practice</h3>
     <div class="p-top">
@@ -183,7 +183,7 @@
     <p class="tiny" style="margin:8px 0 0">Controls: Arrow keys or A/D to steer. Big message shows what to hit.</p>
   </section>
 
-  <!-- ===== MEMORY MATCH (NEW) ===== -->
+  <!-- ===== MEMORY MATCH ===== -->
   <section class="memory">
     <h3>🧠 Memory Match (French ↔ English)</h3>
     <div class="mem-top">
@@ -232,7 +232,7 @@ const WORDS = [
 const $ = id => document.getElementById(id);
 const shuffle = a => { for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; };
 
-/* ===== TOP QUIZ (unchanged logic, only labels) ===== */
+/* ===== TOP QUIZ ===== */
 let dir = "FR2EN";
 let stars = 0, lives = 3, asked = 0, current = null;
 
@@ -322,7 +322,7 @@ function loop(){
 }
 loop();
 
-/* ===== CAR CRASH PRACTICE (unchanged logic) ===== */
+/* ===== CAR CRASH PRACTICE ===== */
 let pRunning = false;
 let pDir = "FR2EN";
 let pScore = 0, pHits = 0, pMiss = 0;
@@ -408,7 +408,7 @@ function updatePracticeHUD(){
   $("pMiss").textContent  = pMiss;
 }
 
-/* Controls: Arrow keys or A/D */
+/* Controls */
 const keys = {left:false, right:false};
 window.addEventListener("keydown", e=>{
   if(e.key==="ArrowLeft"||e.key==="a"||e.key==="A"){ e.preventDefault(); keys.left=true; }
@@ -419,7 +419,6 @@ window.addEventListener("keyup", e=>{
   if(e.key==="ArrowRight"||e.key==="d"||e.key==="D"){ keys.right=false; }
 });
 
-/* Game loop for practice */
 let wordY = -40;
 function loopCar(){
   if(!pRunning){ return; }
@@ -503,11 +502,9 @@ function memReset(keepDeck){
   memMoves.textContent = "0";
   memWin.style.display = "none";
   if(!keepDeck){
-    // rebuild with current size selection
     buildDeck(memSizeSel.value);
     renderDeck();
   } else {
-    // just flip all down
     [...memGrid.querySelectorAll(".mem-card")].forEach(c=>{
       c.classList.remove("flipped","matched");
     });
@@ -517,13 +514,12 @@ function memReset(keepDeck){
 function buildDeck(sizeVal){
   let pairCount;
   if(sizeVal === "all"){
-    pairCount = WORDS.length; // 38
+    pairCount = WORDS.length;
   }else{
     const cards = parseInt(sizeVal, 10); // total cards
     pairCount = Math.max(2, Math.min(WORDS.length, Math.floor(cards/2)));
   }
 
-  // choose pairCount unique indices
   const indices = shuffle([...Array(WORDS.length).keys()]).slice(0, pairCount);
 
   const cards = [];
@@ -540,7 +536,7 @@ function buildDeck(sizeVal){
 
 function renderDeck(){
   memGrid.innerHTML = "";
-  memDeck.forEach((card, i)=>{
+  memDeck.forEach((card)=>{
     const wrap = document.createElement("div");
     wrap.className = "mem-card";
     wrap.dataset.id = card.id;
@@ -603,12 +599,12 @@ function checkMatch(){
   }
 }
 
-/* ===== Kick off the first two games as before ===== */
+/* ===== Kick-off for the first two games (bug fix: no 'let' redeclare) ===== */
 updateHUD(); nextQ();
-let currentMission = pickMission(); setBigMission();
-window.addEventListener("resize", resetCar);
+currentMission = pickMission(); setBigMission();  // <-- fixed: assign, don't redeclare
 
-/* Start a default memory round */
+/* Resize handling and start a default memory round */
+window.addEventListener("resize", resetCar);
 memStart();
 </script>
 </body>
