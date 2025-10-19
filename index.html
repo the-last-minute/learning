@@ -1,590 +1,527 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fairy Tale Knight Quest - French Word Adventure</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f0f8ff; text-align: center; padding: 20px; }
-        h1 { color: #4b0082; }
-        #question { font-size: 24px; margin: 20px; }
-        .button { background-color: #32cd32; color: white; padding: 10px 20px; margin: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 18px; }
-        .button:hover { background-color: #228b22; }
-        #feedback { font-size: 20px; margin: 20px; color: #ff4500; }
-        #score { font-size: 18px; color: #00008b; }
-        #canvas { position: relative; margin: auto; display: block; border: 1px solid #000; }
-    </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>French Fairy Tale Quest — Learn the Words!</title>
+<style>
+  :root{
+    --bg:#0f1226; --card:#181c3a; --ink:#e8ecff; --muted:#aab1ff; --accent:#5cf2d6; --accent2:#ffdd57; --good:#6cf28b; --bad:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+    background: radial-gradient(1200px 600px at 20% -10%, #253175 0%, transparent 60%),
+                radial-gradient(900px 700px at 100% 0%, #2a215a 0%, transparent 60%),
+                var(--bg);
+    color:var(--ink);
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .app{max-width:1000px; width:100%; }
+  header{
+    display:flex; gap:12px; align-items:center; justify-content:space-between; margin-bottom:14px;
+  }
+  h1{font-size: clamp(22px, 3vw, 32px); margin:0; letter-spacing:.3px}
+  .pill{
+    background:linear-gradient(135deg, #2a2f63, #232852); color:var(--ink); border:1px solid #3a448a;
+    padding:8px 12px; border-radius:999px; font-weight:600; box-shadow:0 10px 24px rgba(0,0,0,.18) inset, 0 0 0 1px rgba(255,255,255,.04) inset;
+  }
+  .wrap{display:grid; grid-template-columns: 1.15fr .85fr; gap:16px}
+  @media (max-width:960px){ .wrap{grid-template-columns:1fr} }
+
+  .card{
+    background:linear-gradient(175deg, #1b2044, #15193a 60%); border:1px solid #2b356d; border-radius:18px; padding:16px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.35), 0 2px 0 1px rgba(255,255,255,.03) inset;
+  }
+  .toolbar{display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between}
+  .toolbar .row{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+
+  button, .btn{
+    appearance:none; border:1px solid #33408e; background:linear-gradient(180deg, #2a3271, #242a5b);
+    color:var(--ink); padding:10px 14px; border-radius:12px; font-weight:700; cursor:pointer;
+    box-shadow:0 8px 18px rgba(0,0,0,.25), 0 0 0 1px rgba(255,255,255,.04) inset; transition:.15s transform,.2s filter,.2s background;
+  }
+  button:hover{ filter:brightness(1.05) }
+  button:active{ transform:translateY(2px) }
+
+  .mode{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+  @media (max-width:540px){ .mode{grid-template-columns:1fr 1fr} }
+
+  .statbar{
+    display:grid; grid-template-columns: 1.3fr .7fr; gap:10px; margin:10px 0 14px;
+  }
+  @media (max-width:540px){ .statbar{grid-template-columns:1fr} }
+  .progress, .health{
+    background:#10133a; border:1px solid #2b356d; border-radius:12px; overflow:hidden; height:14px; position:relative;
+  }
+  .progress .fill{background:linear-gradient(90deg, var(--accent), #70f7ff); height:100%; width:0%}
+  .health .fill{background:linear-gradient(90deg, #ff8a8a, var(--bad)); height:100%; width:100%}
+  .meta{display:flex; gap:10px; flex-wrap:wrap; font-weight:700; color:var(--muted); font-size:14px}
+
+  /* QUIZ */
+  .prompt{
+    font-size: clamp(18px, 3.2vw, 26px); margin:10px 0 14px; font-weight:800;
+    background:linear-gradient(90deg, #fff, #c7d2ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .options{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  @media (max-width:680px){ .options{grid-template-columns:1fr} }
+  .option{
+    background:linear-gradient(170deg, #2b2f6d, #24295c); border:1px solid #3d4796; border-radius:14px; padding:14px;
+    font-size:18px; font-weight:700; cursor:pointer; text-align:left; position:relative; isolation:isolate;
+  }
+  .option.correct{outline:2px solid var(--good); background:linear-gradient(170deg, #254b37, #203f2f)}
+  .option.wrong{outline:2px solid var(--bad); background:linear-gradient(170deg, #4a2331, #3b1c28)}
+  .sublabel{display:block; font-size:12px; font-weight:700; opacity:.75}
+  .speak{
+    position:absolute; right:10px; top:10px; background:#0f143d; border:1px solid #3b4692; border-radius:10px; padding:6px 8px; font-weight:900;
+  }
+
+  /* MATCH GAME */
+  .grid{display:grid; gap:10px; grid-template-columns:repeat(4,1fr)}
+  @media (max-width:680px){ .grid{grid-template-columns:repeat(2,1fr)} }
+  .tile{
+    padding:14px; min-height:72px; display:flex; align-items:center; justify-content:center; text-align:center;
+    border-radius:14px; border:1px solid #3b4692; background:linear-gradient(180deg, #202861, #1a204a); cursor:pointer; font-weight:800;
+  }
+  .tile.revealed{background:linear-gradient(180deg, #264e3a, #213e30); border-color:#2e9e74}
+  .tile.solved{background:linear-gradient(180deg, #2a2f6d, #232852); border-color:#4650a5; opacity:.6; cursor:default}
+
+  .footer{display:flex; gap:8px; flex-wrap:wrap; justify-content:space-between; align-items:center; margin-top:12px; color:var(--muted)}
+  .tiny{font-size:12px}
+  .big{font-size:18px; font-weight:900}
+
+  /* Confetti canvas */
+  #fx{position:fixed; inset:0; pointer-events:none}
+</style>
 </head>
 <body>
-    <h1>🛡️ Fairy Tale Knight Quest 🏰</h1>
-    <p>Brave knight, master French words from fairy tales! Nail 10 questions, crush mini-games between levels for bonus points, and claim victory. Each mini-game is a battle—win for extra glory!</p>
-    <div id="question"></div>
-    <div id="options"></div>
-    <div id="feedback"></div>
-    <div id="score">Level: 0 / 10 | Bonus Points: 0</div>
-    <button id="restart" class="button" style="display: none;">Restart Quest!</button>
-    <canvas id="canvas" width="800" height="600"></canvas>
+<canvas id="fx"></canvas>
+<div class="app">
+  <header>
+    <h1>🧙‍♂️ French Fairy Tale Quest</h1>
+    <div class="pill" id="motto">Collect stars by answering correctly. Boss levels are matching games.</div>
+  </header>
 
-    <script>
-        const pairs = [
-            ["Princess", "Princesse"], ["Needle", "Aiguille"], ["To Touch", "Toucher"], ["Brave", "Brave"],
-            ["Silence", "Silencieux"], ["To Wake up", "Réveiller"], ["Thick", "Épaisse"], ["Asleep", "Endormi"],
-            ["Strong", "Fort"], ["Happy", "Heureux"], ["Sea", "Mer"], ["Tail", "Queue"],
-            ["King", "Roi"], ["Light Blue", "Bleue Claire"], ["Mermaid", "Sirène"], ["Boat", "Bateau"],
-            ["To discover", "Découvrir"], ["Ocean", "Océan"], ["Voice", "Voix"], ["Legs", "Jambes"],
-            ["Carriage", "Carrosse"], ["Pumpkin", "Citrouille"], ["Slipper", "Pantoufle"], ["Castle", "Château"],
-            ["Midnight", "Minuit"], ["To Lose", "Perdre"], ["Evil", "Vilaines"], ["A Ball Dance", "Bal"],
-            ["Wand", "Baguette Magique"], ["Always", "Toujours"], ["Basket", "Panier"], ["To meet", "Rencontrer"],
-            ["Smile", "Sourire"], ["Old", "Vieille"], ["Suddenly", "Tout à coup"], ["Hunter", "Chasseur"],
-            ["To bring", "Apporter"], ["Sweet", "Douce"], ["To save", "Sauver"], ["Meal", "Repas"]
-        ];
+  <div class="wrap">
+    <!-- LEFT: Game area -->
+    <section class="card" id="game">
+      <div class="toolbar">
+        <div class="row">
+          <button id="modeQuiz" title="Multiple choice quiz">🎯 Quiz</button>
+          <button id="modeMatch" title="Memory match with pairs">🧩 Match</button>
+          <button id="toggleDir" title="Switch direction (French ↔ English)">🔄 FR → EN</button>
+          <button id="hearPrompt" title="Hear the prompt out loud">🔊 Speak</button>
+        </div>
+        <div class="row">
+          <button id="reset">↻ Reset</button>
+        </div>
+      </div>
 
-        let currentLevel = 0;
-        let bonusPoints = 0;
-        let questions = [];
-        const totalQuestions = 10;
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = 800;
-        canvas.height = 600;
+      <div class="statbar">
+        <div class="progress" title="Quest progress"><div class="fill" id="pFill"></div></div>
+        <div class="health" title="Hearts"><div class="fill" id="hFill"></div></div>
+      </div>
+      <div class="meta" id="meta"></div>
 
-        let mouseX = 0, mouseY = 0;
-        canvas.addEventListener('mousemove', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            mouseX = e.clientX - rect.left;
-            mouseY = e.clientY - rect.top;
-        });
+      <div id="quizArea" style="display:block">
+        <div class="prompt" id="prompt">Ready?</div>
+        <div class="options" id="options"></div>
+      </div>
 
-        let miniClickHandler = null;
-        function setMiniClickHandler(handler) {
-            if (miniClickHandler) canvas.removeEventListener('click', miniClickHandler);
-            miniClickHandler = handler;
-            if (handler) canvas.addEventListener('click', miniClickHandler);
-        }
+      <div id="matchArea" style="display:none">
+        <div class="prompt" id="matchLabel">Find the matching pairs</div>
+        <div class="grid" id="grid"></div>
+      </div>
 
-        function shuffle(array) {
-            return array.sort(() => Math.random() - 0.5);
-        }
+      <div class="footer">
+        <div class="big">⭐ Stars: <span id="stars">0</span></div>
+        <div>Streak: <span id="streak">0</span> · Misses left: <span id="misses">3</span></div>
+        <div class="tiny">Tip: tap the little speaker on any answer to hear it.</div>
+      </div>
+    </section>
 
-        function playSound(frequency, duration) {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioCtx.createOscillator();
-            oscillator.type = 'square';
-            oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
-            oscillator.connect(audioCtx.destination);
-            oscillator.start();
-            setTimeout(() => oscillator.stop(), duration);
-        }
+    <!-- RIGHT: Study & review -->
+    <aside class="card">
+      <h3 style="margin-top:0">📚 Study List</h3>
+      <p class="tiny" style="margin-top:-6px">Tap a word to hear it. Toggle below to flip columns.</p>
+      <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap">
+        <button id="flipTable">Flip Columns</button>
+        <button id="exportMistakes">Export mistakes</button>
+      </div>
+      <div id="table"></div>
+    </aside>
+  </div>
+</div>
 
-        function startGame() {
-            questions = shuffle([...pairs]).slice(0, totalQuestions);
-            currentLevel = 0;
-            bonusPoints = 0;
-            document.getElementById('restart').style.display = 'none';
-            document.getElementById('feedback').innerText = '';
-            setMiniClickHandler(null);
-            updateScore();
-            nextQuestion();
-        }
+<script>
+/* =========================
+   DATA: Words from the test
+   ========================= */
+const entries = [
+  // Column set A (left two columns French → English)
+  {fr:"Carrosse", en:"Carriage"},
+  {fr:"Citrouille", en:"Pumpkin"},
+  {fr:"Pantoufle", en:"Slipper"},
+  {fr:"Château", en:"Castle"},
+  {fr:"Minuit", en:"Midnight"},
+  {fr:"Perdre", en:"To Lose"},
+  {fr:"Vilaines", en:"Evil"},
+  {fr:"Bal", en:"A Ball/Dance"},
+  {fr:"Baguette Magique", en:"Wand"},
+  {fr:"Toujours", en:"Always"},
+  {fr:"Panier", en:"Basket"},
+  {fr:"Rencontre", en:"To meet"},
+  {fr:"Sourire", en:"Smile"},
+  {fr:"Vieille", en:"Old"},
+  {fr:"Tout à coup", en:"Suddenly"},
+  {fr:"Chasseur", en:"Hunter"},
+  {fr:"Apporter", en:"To bring"},
+  {fr:"Douce", en:"Sweet"},
+  {fr:"Sauver", en:"To save"},
+  {fr:"Repas", en:"Meal"},
+  // Column set B (right two columns French → English)
+  {fr:"Princesse", en:"Princess"},
+  {fr:"Aiguille", en:"Needle"},
+  {fr:"Toucher", en:"To touch"},
+  {fr:"Brave", en:"Brave"},
+  {fr:"Silencieux", en:"Silence"},
+  {fr:"Réveiller", en:"To Wake up"},
+  {fr:"Épaisse", en:"Thick"},
+  {fr:"Endormie", en:"Asleep"},
+  {fr:"Fort", en:"Strong"},
+  {fr:"Heureux", en:"Happy"},
+  {fr:"Mer", en:"Sea"},
+  {fr:"Queue", en:"Tail"},
+  {fr:"Roi", en:"King"},
+  {fr:"Bleue Claire", en:"Light Blue"},
+  {fr:"Sirène", en:"Mermaid"},
+  {fr:"Bateau", en:"Boat"},
+  {fr:"Découvrir", en:"To discover"},
+  {fr:"Océan", en:"Ocean"},
+  {fr:"Voix", en:"Voice"},
+  {fr:"Jambes", en:"Legs"}
+];
 
-        function updateScore() {
-            document.getElementById('score').innerText = `Level: ${currentLevel} / 10 | Bonus Points: ${bonusPoints}`;
-        }
+/* ========= Helpers ========= */
+const byId = id => document.getElementById(id);
+const rand = n => Math.floor(Math.random()*n);
+const copy = x => JSON.parse(JSON.stringify(x));
+const speak = (txt, lang="fr-FR") => {
+  if (!window.speechSynthesis) return;
+  const u = new SpeechSynthesisUtterance(txt);
+  u.lang = lang;
+  u.rate = 0.95;
+  u.pitch = 1.0;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+};
 
-        function nextQuestion() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if (currentLevel >= totalQuestions) {
-                document.getElementById('question').innerText = `🏆 Quest Complete! Total Bonus: ${bonusPoints} 🎉`;
-                document.getElementById('options').innerHTML = '';
-                document.getElementById('restart').style.display = 'block';
-                return;
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=rand(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* ======= State ======= */
+let dir = "FR2EN";           // FR2EN or EN2FR
+let mode = "QUIZ";           // QUIZ or MATCH
+let stars = 0;
+let streak = 0;
+let misses = 3;
+let asked = 0;
+let progress = 0;            // 0..1
+let pool = [];               // active learning pool with weights
+let mistakes = [];           // for export
+
+/* ======= Init ======= */
+function initPool(){
+  // Weight mistakes higher so they reappear more
+  pool = entries.map(e => ({...e, weight:1}));
+}
+initPool();
+
+/* ======= UI wiring ======= */
+byId("modeQuiz").onclick = ()=>switchMode("QUIZ");
+byId("modeMatch").onclick = ()=>switchMode("MATCH");
+byId("toggleDir").onclick = ()=>{ dir = dir==="FR2EN" ? "EN2FR" : "FR2EN"; updateMeta(); next(); };
+byId("reset").onclick = ()=>resetGame();
+byId("hearPrompt").onclick = ()=> {
+  const node = byId("prompt");
+  const txt = node?.dataset?.say || node?.textContent || "";
+  const lang = dir==="FR2EN" ? "fr-FR" : "en-US";
+  speak(txt, lang);
+};
+byId("flipTable").onclick = ()=> renderTable(true);
+byId("exportMistakes").onclick = exportMistakes;
+
+function resetGame(){
+  stars=0; streak=0; misses=3; asked=0; progress=0; mistakes.length=0; initPool();
+  updateStats(); switchMode("QUIZ");
+}
+
+/* ======= Stats & HUD ======= */
+function updateStats(){
+  byId("stars").textContent = stars;
+  byId("streak").textContent = streak;
+  byId("misses").textContent = misses;
+  byId("pFill").style.width = (progress*100).toFixed(1)+"%";
+  byId("hFill").style.width = (Math.max(0, misses)/3*100)+"%";
+}
+function updateMeta(){
+  const rounds = 20; // after 20 quiz rounds progress fills
+  byId("meta").textContent =
+    `Mode: ${mode==="QUIZ"?"Quiz":"Match"} · Direction: ${dir==="FR2EN"?"FR → EN":"EN → FR"} · Round ${asked+1}`;
+  byId("toggleDir").textContent = dir==="FR2EN" ? "🔄 FR → EN" : "🔄 EN → FR";
+  byId("motto").textContent = mode==="QUIZ"
+    ? "Answer to earn stars. Every 5 correct triggers a matching boss."
+    : "Clear the board by finding French ↔ English pairs.";
+}
+
+/* ======= Quiz mode ======= */
+function weightedPick(){
+  const total = pool.reduce((s,e)=>s+e.weight,0);
+  let r = Math.random()*total;
+  for(const e of pool){ r -= e.weight; if(r<=0) return e; }
+  return pool[0];
+}
+function makeOptions(correct, k=4){
+  const opts = new Set([correct]);
+  while(opts.size<k){
+    const random = entries[rand(entries.length)];
+    const text = dir==="FR2EN" ? random.en : random.fr;
+    opts.add(text);
+  }
+  return shuffle([...opts]);
+}
+function renderQuiz(){
+  const item = weightedPick();
+  const q = dir==="FR2EN" ? item.fr : item.en;
+  const a = dir==="FR2EN" ? item.en : item.fr;
+
+  byId("prompt").textContent = `Translate: ${q}`;
+  byId("prompt").dataset.say = q;
+  const wrap = byId("options"); wrap.innerHTML = "";
+
+  makeOptions(a, 4).forEach(opt=>{
+    const btn = document.createElement("button");
+    btn.className = "option";
+    btn.innerHTML = `<span>${opt}</span> <button class="speak" aria-label="speak">🔊</button>
+                     <span class="sublabel"></span>`;
+    btn.onclick = (ev)=>{
+      if (ev.target && ev.target.closest(".speak")) {
+        speak(opt, dir==="FR2EN" ? "en-US" : "fr-FR");
+        ev.stopPropagation(); return;
+      }
+      check(opt, a, item, btn);
+    };
+    wrap.appendChild(btn);
+  });
+
+  // hint under one option with the same first letter
+  for(const el of wrap.children){
+    const txt = el.querySelector("span").textContent.trim();
+    if (txt[0] === a[0]) { el.querySelector(".sublabel").textContent = "Hint: same first letter"; break; }
+  }
+}
+function check(choice, answer, item, btnNode){
+  asked++; updateMeta();
+  const all = [...document.querySelectorAll(".option")];
+  all.forEach(b => b.disabled = true);
+
+  if(choice === answer){
+    btnNode.classList.add("correct");
+    streak++; stars += 2 + Math.floor(streak/3); // reward streaks
+    // make the chosen word less likely for a while
+    item.weight = Math.max(.3, item.weight*0.6);
+    celebrate();
+  }else{
+    btnNode.classList.add("wrong");
+    for(const el of all){ if(el.textContent.trim().startsWith(answer)) el.classList.add("correct"); }
+    streak = 0; misses--;
+    // increase weight so it comes back soon
+    item.weight = Math.min(5, item.weight*1.8);
+    mistakes.push({q: dir==="FR2EN"?item.fr:item.en, a:answer, when:new Date().toISOString()});
+    flash(byId("game"), "shake");
+  }
+
+  progress = Math.min(1, asked/20);
+  updateStats();
+
+  // boss every 5 correct answers
+  if (stars && stars % 10 === 0){
+    setTimeout(()=>{ switchMode("MATCH"); }, 600);
+  }else{
+    setTimeout(next, 700);
+  }
+
+  if (misses <= 0){
+    setTimeout(()=>{
+      alert("All hearts lost. Restarting quest.");
+      resetGame();
+    }, 250);
+  }
+}
+
+/* ======= Match mode ======= */
+let matchDeck=[], matchOpen=[], matchSolved=0;
+function buildDeck(){
+  // pick 6 random pairs from entries
+  const sample = shuffle(copy(entries)).slice(0, 6);
+  matchDeck = [];
+  for(const it of sample){
+    matchDeck.push({id: it.fr+"|F", text: it.fr, key: it.en, lang:"fr", solved:false});
+    matchDeck.push({id: it.fr+"|E", text: it.en, key: it.en, lang:"en", solved:false});
+  }
+  shuffle(matchDeck);
+}
+function renderMatch(){
+  const grid = byId("grid"); grid.innerHTML="";
+  matchOpen=[]; matchSolved=0;
+  buildDeck();
+  matchDeck.forEach(card=>{
+    const d = document.createElement("button");
+    d.className="tile";
+    d.textContent = "❓";
+    d.dataset.id = card.id;
+    d.onclick = ()=>{
+      if(card.solved || matchOpen.includes(card) || matchOpen.length===2) return;
+      d.classList.add("revealed");
+      d.textContent = card.text;
+      speak(card.text, card.lang==="fr"?"fr-FR":"en-US");
+      matchOpen.push(card);
+
+      if(matchOpen.length===2){
+        const [a,b] = matchOpen;
+        const aDom = [...grid.children].find(x=>x.dataset.id===a.id);
+        const bDom = [...grid.children].find(x=>x.dataset.id===b.id);
+        if(a.key === b.key && a.id!==b.id){
+          // solved
+          setTimeout(()=>{
+            a.solved = b.solved = true;
+            aDom.className="tile solved"; bDom.className="tile solved";
+            aDom.textContent = a.text; bDom.textContent = b.text;
+            matchOpen.length=0; matchSolved+=2;
+            stars += 5; streak += 2; updateStats(); celebrateSmall();
+            if(matchSolved === matchDeck.length){
+              setTimeout(()=>{
+                switchMode("QUIZ");
+              }, 700);
             }
-            const [english, french] = questions[currentLevel];
-            document.getElementById('question').innerText = `Translate to French: "${english}"?`;
-            const options = [french];
-            while (options.length < 4) {
-                const randomFrench = pairs[Math.floor(Math.random() * pairs.length)][1];
-                if (!options.includes(randomFrench)) options.push(randomFrench);
-            }
-            const shuffledOptions = shuffle(options);
-            const optionsDiv = document.getElementById('options');
-            optionsDiv.innerHTML = '';
-            shuffledOptions.forEach(opt => {
-                const btn = document.createElement('button');
-                btn.className = 'button';
-                btn.innerText = opt;
-                btn.onclick = () => checkAnswer(opt, french);
-                optionsDiv.appendChild(btn);
-            });
+          }, 250);
+        }else{
+          // mismatch
+          streak = 0; misses--; updateStats(); flash(byId("game"), "shake");
+          setTimeout(()=>{
+            aDom.classList.remove("revealed"); bDom.classList.remove("revealed");
+            aDom.textContent="❓"; bDom.textContent="❓"; matchOpen.length=0;
+            if(misses<=0){ alert("All hearts lost. Restarting quest."); resetGame(); }
+          }, 650);
         }
+      }
+    };
+    grid.appendChild(d);
+  });
+}
 
-        function checkAnswer(selected, correct) {
-            if (selected === correct) {
-                document.getElementById('feedback').innerText = `Epic win! Charge into the mini-battle! ⚔️`;
-                playSound(440, 200); // Success beep
-                currentLevel++;
-                updateScore();
-                setTimeout(() => playMiniGame(currentLevel - 1), 1000); // Index from 0
-            } else {
-                document.getElementById('feedback').innerText = 'Missed! Swing again, knight! 🛡️';
-                playSound(220, 200); // Fail beep
-            }
-        }
+/* ======= Mode switch & next ======= */
+function switchMode(nextMode){
+  mode = nextMode;
+  byId("quizArea").style.display = mode==="QUIZ" ? "block" : "none";
+  byId("matchArea").style.display = mode==="MATCH" ? "block" : "none";
+  updateMeta();
+  if(mode==="QUIZ") renderQuiz(); else renderMatch();
+}
+function next(){
+  if(mode!=="QUIZ") return;
+  renderQuiz();
+}
 
-        const miniGames = [
-            // 1. Stop the Dragon Breath (Timing) - Bonus if close to target
-            {
-                name: "Stop the Dragon Breath",
-                init: function() {
-                    this.state = { startTime: Date.now(), stopped: false, target: 5, elapsed: 0, color: 'red' };
-                },
-                update: function() {
-                    const state = this.state;
-                    state.elapsed = (Date.now() - state.startTime) / 1000;
-                    if (state.elapsed > state.target && !state.stopped) {
-                        this.endMini("Dragon scorched you! No bonus.", 0);
-                    }
-                },
-                draw: function() {
-                    const state = this.state;
-                    ctx.fillStyle = '#8B4513'; // Brown ground
-                    ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
-                    ctx.fillStyle = state.color;
-                    ctx.fillRect(0, canvas.height / 2 - 25, (state.elapsed / state.target) * canvas.width, 50);
-                    ctx.font = '20px Arial';
-                    ctx.fillStyle = 'black';
-                    ctx.fillText('Click to stop the breath!', canvas.width / 2 - 150, 50);
-                },
-                onClick: function() {
-                    const state = this.state;
-                    if (!state.stopped) {
-                        state.stopped = true;
-                        const score = Math.abs(state.target - state.elapsed);
-                        const bonus = score < 0.5 ? 2 : score < 1 ? 1 : 0;
-                        this.endMini(`Halted at ${state.elapsed.toFixed(2)}s! Bonus: ${bonus}`, bonus);
-                    }
-                },
-                endMini: function(msg, bonus) {
-                    document.getElementById('feedback').innerText = msg;
-                    bonusPoints += bonus;
-                    updateScore();
-                    playSound(bonus > 0 ? 440 : 220, 200);
-                    clearInterval(this.interval);
-                    setMiniClickHandler(null);
-                    setTimeout(nextQuestion, 2000);
-                }
-            },
-            // 2. Catch the Falling Sword (Falling) - Bonus if caught early
-            {
-                name: "Catch the Falling Sword",
-                init: function() {
-                    this.state = { ballX: Math.random() * (canvas.width - 40) + 20, ballY: 0, speed: 4, radius: 20, caught: false, color: 'silver' };
-                },
-                update: function() {
-                    const state = this.state;
-                    state.ballY += state.speed;
-                    if (state.ballY > canvas.height + state.radius && !state.caught) {
-                        this.endMini("Sword shattered! No bonus.", 0);
-                    }
-                },
-                draw: function() {
-                    const state = this.state;
-                    ctx.fillStyle = '#87CEEB'; // Sky background
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = state.color;
-                    ctx.beginPath();
-                    ctx.arc(state.ballX, state.ballY, state.radius, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.font = '20px Arial';
-                    ctx.fillStyle = 'black';
-                    ctx.fillText('Click to catch!', canvas.width / 2 - 100, 50);
-                },
-                onClick: function(x, y) {
-                    const state = this.state;
-                    if (!state.caught) {
-                        const dist = Math.sqrt((x - state.ballX) ** 2 + (y - state.ballY) ** 2);
-                        if (dist < state.radius) {
-                            state.caught = true;
-                            const bonus = state.ballY < canvas.height / 2 ? 2 : 1;
-                            this.endMini(`Snagged the sword! Bonus: ${bonus}`, bonus);
-                        }
-                    }
-                },
-                endMini: function(msg, bonus) {
-                    document.getElementById('feedback').innerText = msg;
-                    bonusPoints += bonus;
-                    updateScore();
-                    playSound(bonus > 0 ? 440 : 220, 200);
-                    clearInterval(this.interval);
-                    setMiniClickHandler(null);
-                    setTimeout(nextQuestion, 2000);
-                }
-            },
-            // Similar enhancements for the other 8 mini-games...
-            // 3. Whack the Goblin
-            {
-                name: "Whack the Goblin",
-                init: function() {
-                    this.state = { targetX: Math.random() * (canvas.width - 60) + 30, targetY: Math.random() * (canvas.height - 60) + 30, timeLeft: 3, radius: 30, whacked: false, color: 'green' };
-                },
-                update: function() {
-                    const state = this.state;
-                    state.timeLeft -= 0.02;
-                    if (state.timeLeft <= 0 && !state.whacked) {
-                        this.endMini("Goblin fled! No bonus.", 0);
-                    }
-                },
-                draw: function() {
-                    const state = this.state;
-                    ctx.fillStyle = '#228B22'; // Forest bg
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = state.color;
-                    ctx.beginPath();
-                    ctx.arc(state.targetX, state.targetY, state.radius, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.fillStyle = 'black';
-                    ctx.font = '16px Arial';
-                    ctx.fillText(`Time: ${state.timeLeft.toFixed(1)}s`, state.targetX - 30, state.targetY - state.radius - 10);
-                    ctx.fillText('Whack it!', canvas.width / 2 - 50, 50);
-                },
-                onClick: function(x, y) {
-                    const state = this.state;
-                    if (!state.whacked) {
-                        const dist = Math.sqrt((x - state.targetX) ** 2 + (y - state.targetY) ** 2);
-                        if (dist < state.radius) {
-                            state.whacked = true;
-                            const bonus = state.timeLeft > 1.5 ? 2 : 1;
-                            this.endMini(`Smashed the goblin! Bonus: ${bonus}`, bonus);
-                        }
-                    }
-                },
-                endMini: function(msg, bonus) {
-                    document.getElementById('feedback').innerText = msg;
-                    bonusPoints += bonus;
-                    updateScore();
-                    playSound(bonus > 0 ? 440 : 220, 200);
-                    clearInterval(this.interval);
-                    setMiniClickHandler(null);
-                    setTimeout(nextQuestion, 2000);
-                }
-            },
-            // 4. Quick Sword Swings
-            {
-                name: "Quick Sword Swings",
-                init: function() {
-                    this.state = { clicks: 0, timeLeft: 5, color: 'blue' };
-                },
-                update: function() {
-                    const state = this.state;
-                    state.timeLeft -= 0.02;
-                    if (state.timeLeft <= 0) {
-                        const bonus = state.clicks > 20 ? 2 : state.clicks > 10 ? 1 : 0;
-                        this.endMini(`Swung ${state.clicks} times! Bonus: ${bonus}`, bonus);
-                    }
-                },
-                draw: function() {
-                    const state = this.state;
-                    ctx.fillStyle = '#FFD700'; // Gold arena
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = state.color;
-                    ctx.font = '30px Arial';
-                    ctx.fillText(`Slash fast! Time: ${state.timeLeft.toFixed(1)}s`, canvas.width / 2 - 150, canvas.height / 2);
-                    ctx.fillText(`Swings: ${state.clicks}`, canvas.width / 2 - 100, canvas.height / 2 + 40);
-                },
-                onClick: function() {
-                    this.state.clicks++;
-                    playSound(523, 100); // Quick beep per click
-                },
-                endMini: function(msg, bonus) {
-                    document.getElementById('feedback').innerText = msg;
-                    bonusPoints += bonus;
-                    updateScore();
-                    playSound(bonus > 0 ? 440 : 220, 200);
-                    clearInterval(this.interval);
-                    setMiniClickHandler(null);
-                    setTimeout(nextQuestion, 2000);
-                }
-            },
-            // 5. Time the Shield Block
-            {
-                name: "Time the Shield Block",
-                init: function() {
-                    this.state = { startTime: Date.now(), stopped: false, target: 4, elapsed: 0, color: 'gray' };
-                },
-                update: function() {
-                    const state = this.state;
-                    state.elapsed = (Date.now() - state.startTime) / 1000;
-                    if (state.elapsed > state.target && !state.stopped) {
-                        this.endMini("Attack hit! No bonus.", 0);
-                    }
-                },
-                draw: function() {
-                    const state = this.state;
-                    ctx.fillStyle = '#A9A9A9'; // Stone wall bg
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = state.color;
-                    ctx.fillRect(0, canvas.height / 2 - 25, (state.elapsed / state.target) * canvas.width, 50);
-                    ctx.font = '20px Arial';
-                    ctx.fillStyle = 'black';
-                    ctx.fillText('Click to block!', canvas.width / 2 - 100, 50);
-                },
-                onClick: function() {
-                    const state = this.state;
-                    if (!state.stopped) {
-                        state.stopped = true;
-                        const score = Math.abs(state.target - state.elapsed);
-                        const bonus = score < 0.5 ? 2 : score < 1 ? 1 : 0;
-                        this.endMini(`Blocked at ${state.elapsed.toFixed(2)}s! Bonus: ${bonus}`, bonus);
-                    }
-                },
-                endMini: function(msg, bonus) {
-                    document.getElementById('feedback').innerText = msg;
-                    bonusPoints += bonus;
-                    updateScore();
-                    playSound(bonus > 0 ? 440 : 220, 200);
-                    clearInterval(this.interval);
-                    setMiniClickHandler(null);
-                    setTimeout(nextQuestion, 2000);
-                }
-            },
-            // 6. Catch the Magic Orb
-            {
-                name: "Catch the Magic Orb",
-                init: function() {
-                    this.state = { ballX: Math.random() * (canvas.width - 30) + 15, ballY: 0, speed: 6, radius: 15, caught: false, color: 'purple' };
-                },
-                update: function() {
-                    const state = this.state;
-                    state.ballY += state.speed;
-                    if (state.ballY > canvas.height + state.radius && !state.caught) {
-                        this.endMini("Orb vanished! No bonus.", 0);
-                    }
-                },
-                draw: function() {
-                    const state = this.state;
-                    ctx.fillStyle = '#4B0082'; // Mystic bg
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = state.color;
-                    ctx.beginPath();
-                    ctx.arc(state.ballX, state.ballY, state.radius, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.font = '20px Arial';
-                    ctx.fillStyle = 'white';
-                    ctx.fillText('Grab the orb!', canvas.width / 2 - 100, 50);
-                },
-                onClick: function(x, y) {
-                    const state = this.state;
-                    if (!state.caught) {
-                        const dist = Math.sqrt((x - state.ballX) ** 2 + (y - state.ballY) ** 2);
-                        if (dist < state.radius) {
-                            state.caught = true;
-                            const bonus = state.ballY < canvas.height / 2 ? 2 : 1;
-                            this.endMini(`Seized the orb! Bonus: ${bonus}`, bonus);
-                        }
-                    }
-                },
-                endMini: function(msg, bonus) {
-                    document.getElementById('feedback').innerText = msg;
-                    bonusPoints += bonus;
-                    updateScore();
-                    playSound(bonus > 0 ? 440 : 220, 200);
-                    clearInterval(this.interval);
-                    setMiniClickHandler(null);
-                    setTimeout(nextQuestion, 2000);
-                }
-            },
-            // 7. Whack the Orc
-            {
-                name: "Whack the Orc",
-                init: function() {
-                    this.state = { targetX: Math.random() * (canvas.width - 70) + 35, targetY: Math.random() * (canvas.height - 70) + 35, timeLeft: 2.5, radius: 35, whacked: false, color: 'brown' };
-                },
-                update: function() {
-                    const state = this.state;
-                    state.timeLeft -= 0.02;
-                    if (state.timeLeft <= 0 && !state.whacked) {
-                        this.endMini("Orc escaped! No bonus.", 0);
-                    }
-                },
-                draw: function() {
-                    const state = this.state;
-                    ctx.fillStyle = '#556B2F'; // Dark forest bg
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = state.color;
-                    ctx.beginPath();
-                    ctx.arc(state.targetX, state.targetY, state.radius, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.fillStyle = 'white';
-                    ctx.font = '16px Arial';
-                    ctx.fillText(`Time: ${state.timeLeft.toFixed(1)}s`, state.targetX - 30, state.targetY - state.radius - 10);
-                    ctx.fillText('Bash the orc!', canvas.width / 2 - 70, 50);
-                },
-                onClick: function(x, y) {
-                    const state = this.state;
-                    if (!state.whacked) {
-                        const dist = Math.sqrt((x - state.targetX) ** 2 + (y - state.targetY) ** 2);
-                        if (dist < state.radius) {
-                            state.whacked = true;
-                            const bonus = state.timeLeft > 1.25 ? 2 : 1;
-                            this.endMini(`Crushed the orc! Bonus: ${bonus}`, bonus);
-                        }
-                    }
-                },
-                endMini: function(msg, bonus) {
-                    document.getElementById('feedback').innerText = msg;
-                    bonusPoints += bonus;
-                    updateScore();
-                    playSound(bonus > 0 ? 440 : 220, 200);
-                    clearInterval(this.interval);
-                    setMiniClickHandler(null);
-                    setTimeout(nextQuestion, 2000);
-                }
-            },
-            // 8. Quick Arrow Shots
-            {
-                name: "Quick Arrow Shots",
-                init: function() {
-                    this.state = { clicks: 0, timeLeft: 4, color: 'green' };
-                },
-                update: function() {
-                    const state = this.state;
-                    state.timeLeft -= 0.02;
-                    if (state.timeLeft <= 0) {
-                        const bonus = state.clicks > 15 ? 2 : state.clicks > 8 ? 1 : 0;
-                        this.endMini(`Shot ${state.clicks} arrows! Bonus: ${bonus}`, bonus);
-                    }
-                },
-                draw: function() {
-                    const state = this.state;
-                    ctx.fillStyle = '#90EE90'; // Light green field
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = state.color;
-                    ctx.font = '30px Arial';
-                    ctx.fillText(`Fire fast! Time: ${state.timeLeft.toFixed(1)}s`, canvas.width / 2 - 150, canvas.height / 2);
-                    ctx.fillText(`Shots: ${state.clicks}`, canvas.width / 2 - 100, canvas.height / 2 + 40);
-                },
-                onClick: function() {
-                    this.state.clicks++;
-                    playSound(659, 100); // Higher beep for shots
-                },
-                endMini: function(msg, bonus) {
-                    document.getElementById('feedback').innerText = msg;
-                    bonusPoints += bonus;
-                    updateScore();
-                    playSound(bonus > 0 ? 440 : 220, 200);
-                    clearInterval(this.interval);
-                    setMiniClickHandler(null);
-                    setTimeout(nextQuestion, 2000);
-                }
-            },
-            // 9. Time the Jump over Pit
-            {
-                name: "Time the Jump over Pit",
-                init: function() {
-                    this.state = { startTime: Date.now(), stopped: false, target: 6, elapsed: 0, color: 'orange' };
-                },
-                update: function() {
-                    const state = this.state;
-                    state.elapsed = (Date.now() - state.startTime) / 1000;
-                    if (state.elapsed > state.target && !state.stopped) {
-                        this.endMini("Plunged into the pit! No bonus.", 0);
-                    }
-                },
-                draw: function() {
-                    const state = this.state;
-                    ctx.fillStyle = '#FF8C00'; // Lava pit bg
-                    ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
-                    ctx.fillStyle = state.color;
-                    ctx.fillRect(0, canvas.height / 2 - 25, (state.elapsed / state.target) * canvas.width, 50);
-                    ctx.font = '20px Arial';
-                    ctx.fillStyle = 'black';
-                    ctx.fillText('Click to leap!', canvas.width / 2 - 100, 50);
-                },
-                onClick: function() {
-                    const state = this.state;
-                    if (!state.stopped) {
-                        state.stopped = true;
-                        const score = Math.abs(state.target - state.elapsed);
-                        const bonus = score < 0.5 ? 2 : score < 1 ? 1 : 0;
-                        this.endMini(`Leaped at ${state.elapsed.toFixed(2)}s! Bonus: ${bonus}`, bonus);
-                    }
-                },
-                endMini: function(msg, bonus) {
-                    document.getElementById('feedback').innerText = msg;
-                    bonusPoints += bonus;
-                    updateScore();
-                    playSound(bonus > 0 ? 440 : 220, 200);
-                    clearInterval(this.interval);
-                    setMiniClickHandler(null);
-                    setTimeout(nextQuestion, 2000);
-                }
-            },
-            // 10. Catch the Treasure Chest
-            {
-                name: "Catch the Treasure Chest",
-                init: function() {
-                    this.state = { ballX: Math.random() * (canvas.width - 50) + 25, ballY: 0, speed: 5, radius: 25, caught: false, color: 'gold' };
-                },
-                update: function() {
-                    const state = this.state;
-                    state.ballY += state.speed;
-                    if (state.ballY > canvas.height + state.radius && !state.caught) {
-                        this.endMini("Treasure lost! No bonus.", 0);
-                    }
-                },
-                draw: function() {
-                    const state = this.state;
-                    ctx.fillStyle = '#B8860B'; // Golden cave bg
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = state.color;
-                    ctx.beginPath();
-                    ctx.arc(state.ballX, state.ballY, state.radius, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.font = '20px Arial';
-                    ctx.fillStyle = 'black';
-                    ctx.fillText('Snatch the chest!', canvas.width / 2 - 120, 50);
-                },
-                onClick: function(x, y) {
-                    const state = this.state;
-                    if (!state.caught) {
-                        const dist = Math.sqrt((x - state.ballX) ** 2 + (y - state.ballY) ** 2);
-                        if (dist < state.radius) {
-                            state.caught = true;
-                            const bonus = state.ballY < canvas.height / 2 ? 2 : 1;
-                            this.endMini(`Claimed the treasure! Bonus: ${bonus}`, bonus);
-                        }
-                    }
-                },
-                endMini: function(msg, bonus) {
-                    document.getElementById('feedback').innerText = msg;
-                    bonusPoints += bonus;
-                    updateScore();
-                    playSound(bonus > 0 ? 440 : 220, 200);
-                    clearInterval(this.interval);
-                    setMiniClickHandler(null);
-                    setTimeout(nextQuestion, 2000);
-                }
-            }
-        ];
+/* ======= Study table ======= */
+let tableFlip=false;
+function renderTable(flipToggle=false){
+  if(flipToggle) tableFlip=!tableFlip;
+  const host = byId("table"); host.innerHTML="";
+  const t = document.createElement("table");
+  t.style.width="100%"; t.style.borderCollapse="separate"; t.style.borderSpacing="0 6px";
+  entries.forEach(e=>{
+    const tr = document.createElement("tr");
+    const a = document.createElement("td");
+    const b = document.createElement("td");
+    a.style.padding="8px 10px"; b.style.padding="8px 10px";
+    a.style.background="#141947"; b.style.background="#141947";
+    a.style.border="1px solid #2b356d"; b.style.border="1px solid #2b356d";
+    a.style.borderRadius="10px 0 0 10px"; b.style.borderRadius="0 10px 10px 0";
+    a.style.fontWeight="800"; b.style.fontWeight="700";
+    a.style.width="48%"; b.style.width="52%";
+    if(!tableFlip){ a.textContent=e.fr; b.textContent=e.en; }
+    else { a.textContent=e.en; b.textContent=e.fr; }
+    a.onclick=()=>speak(a.textContent, tableFlip?"en-US":"fr-FR");
+    b.onclick=()=>speak(b.textContent, tableFlip?"fr-FR":"en-US");
+    tr.appendChild(a); tr.appendChild(b); t.appendChild(tr);
+  });
+  host.appendChild(t);
+}
+renderTable();
 
-        function playMiniGame(index) {
-            const mini = miniGames[index % miniGames.length];
-            document.getElementById('question').innerText = `Battle ${index + 1}: ${mini.name}`;
-            document.getElementById('options').innerHTML = '';
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            mini.init();
-            mini.interval = setInterval(() => {
-                ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear each frame for animation
-                mini.update();
-                mini.draw();
-            }, 20);
-            setMiniClickHandler((e) => {
-                mini.onClick(mouseX, mouseY);
-            });
-        }
+/* ======= Effects: confetti & flash ======= */
+const fx = byId("fx"); const ctx = fx.getContext("2d");
+function resizeFx(){ fx.width = innerWidth; fx.height = innerHeight; }
+addEventListener("resize", resizeFx); resizeFx();
 
-        document.getElementById('restart').onclick = startGame;
-        startGame();
-    </script>
+let confetti = [];
+function celebrateSmall(){ burst(18, 9); }
+function celebrate(){ burst(36, 12); }
+function burst(n=30, speed=10){
+  for(let i=0;i<n;i++){
+    confetti.push({
+      x: innerWidth*0.5 + (Math.random()*120-60),
+      y: innerHeight*0.2 + (Math.random()*30-15),
+      vx: (Math.random()-0.5)*speed,
+      vy: Math.random()*-speed - 2,
+      g: .25+Math.random()*.2,
+      s: 4+Math.random()*4,
+      a: 1,
+      hue: Math.floor(Math.random()*360)
+    });
+  }
+}
+function tick(){
+  ctx.clearRect(0,0,fx.width,fx.height);
+  confetti.forEach(p=>{
+    p.vy += p.g; p.x += p.vx; p.y += p.vy; p.a -= 0.01;
+  });
+  confetti = confetti.filter(p=>p.a>0 && p.y<innerHeight+20);
+  confetti.forEach(p=>{
+    ctx.globalAlpha = Math.max(0, p.a);
+    ctx.fillStyle = `hsl(${p.hue} 90% 60%)`;
+    ctx.fillRect(p.x, p.y, p.s, p.s);
+  });
+  requestAnimationFrame(tick);
+}
+tick();
+
+function flash(el, cls){
+  el.style.animation = "shake .32s linear";
+  setTimeout(()=>{ el.style.animation = "" }, 340);
+}
+const style = document.createElement("style");
+style.textContent = `
+@keyframes shake {
+  0%{ transform:translateX(0) } 20%{ transform:translateX(-6px) }
+  40%{ transform:translateX(6px) } 60%{ transform:translateX(-4px) }
+  80%{ transform:translateX(4px) } 100%{ transform:translateX(0) }
+}`; document.head.appendChild(style);
+
+/* ======= Start ======= */
+updateMeta(); updateStats(); renderQuiz();
+
+/* ======= Export mistakes ======= */
+function exportMistakes(){
+  if(!mistakes.length){ alert("Nice. No mistakes to export."); return; }
+  const lines = mistakes.map(m=>`${m.when}\t${m.q}\t${m.a}`);
+  const blob = new Blob(["When\tPrompt\tAnswer\n", ...lines].join("\n"), {type:"text/tab-separated-values"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "french-mistakes.tsv"; a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
 </body>
 </html>
+
